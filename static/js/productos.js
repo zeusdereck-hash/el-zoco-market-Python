@@ -3,15 +3,6 @@
 const productosData = {
     telefonia: [
         {
-            id: 'redmi-note-13',
-            nombre: 'REDMI NOTE 13',
-            precio: 3000,
-            codigo: '711000257145',
-            imagen: '/static/img/productos/redmi13.jpg',
-            badge: 'Premium',
-            descripcion: '📱 Pantalla AMOLED FHD+ a 120Hz\n⚡ Carga Rápida de 33W\n🚀 Procesador Snapdragon\n🛡️ Resistencia IP54.'
-        },
-        {
             id: 'cargador-65w',
             nombre: 'CARGADOR 65W GAN FAST',
             precio: 380,

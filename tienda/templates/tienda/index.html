@@ -144,8 +144,8 @@
 </span>
             {% endif %}
             <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" 
-                 onclick="elZocoApp.verDetalles('{{ producto.nombre|escapejs }}', {{ producto.precio }}, '{{ producto.descripcion|escapejs }}', '{{ producto.imagen.url }}', '{{ producto.codigo }}')" 
-                 loading="lazy">
+                onclick="elZocoApp.verDetalles('{{ producto.nombre|escapejs }}', {{ producto.precio }}, '{{ producto.descripcion|escapejs }}', '{{ producto.imagen.url }}', '{{ producto.codigo }}')" 
+                loading="lazy">
             <h3>{{ producto.nombre }}</h3>
             <p class="precio-card">${{ producto.precio|floatformat:2 }}</p>
             <button class="btn-add" onclick="elZocoApp.agregarAlCarrito('{{ producto.nombre|escapejs }}', {{ producto.precio }}, event, '{{ producto.codigo }}')">
@@ -457,10 +457,10 @@
             <p class="footer-description">Tu mercado de confianza para encontrar tesoros y soluciones extraordinarias.</p>
             
             <div class="social-links">
-                <a href="https://www.facebook.com/share/19WXAYatpK/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <a href="https://www.facebook.com/ElZocogrup" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                     <i class="fab fa-facebook" aria-hidden="true"></i> Facebook
                 </a>
-                <a href="https://www.instagram.com/el.zoco.service?igsh=aGh3dWs0dXFkaGlk" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <a href="https://www.instagram.com/el.zoco.grup/?hl=es" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                     <i class="fab fa-instagram" aria-hidden="true"></i> Instagram
                 </a>
                 <a href="https://wa.me/525580867149" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
