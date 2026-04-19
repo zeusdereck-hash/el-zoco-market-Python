@@ -68,34 +68,6 @@
 
     <!-- Contenido principal -->
     <main class="container">
-<section aria-labelledby="reparaciones-title">
-    <h2 id="reparaciones-title" class="section-title">Servicios de Reparación</h2>
-    <div class="products-grid" id="productos-reparaciones">
-        {% for servicio in productos_reparaciones %}
-        <article class="product-card">
-            {% if servicio.badge %}
-            <span class="badge-premium">{{ servicio.badge }}</span>
-            {% endif %}
-            
-            <img src="{{ servicio.imagen.url }}" alt="{{ servicio.nombre }}" 
-                 onclick="elZocoApp.verDetalles('{{ servicio.nombre|escapejs }}', {{ servicio.precio }}, '{{ servicio.descripcion|escapejs }}', '{{ servicio.imagen.url }}', '{{ servicio.codigo }}')" 
-                 loading="lazy">
-
-            <h3>{{ servicio.nombre }}</h3>
-            <p class="precio-card">${{ servicio.precio|floatformat:2 }}</p>
-            
-            <a href="https://wa.me/525580867149?text=Hola%20El%20Zoco,%20me%20interesa%20el%20servicio:%20{{ servicio.nombre|urlencode }}%20(Código:%20{{ servicio.codigo|urlencode }})" 
-               target="_blank" 
-               class="btn-add" 
-               style="text-decoration: none; display: inline-block; background-color: #25d366; text-align: center;">
-               <i class="fab fa-whatsapp"></i> Solicitar por WhatsApp
-            </a>
-        </article>
-        {% empty %}
-        <p style="grid-column: 1/-1; text-align: center; padding: 40px;">No hay servicios disponibles.</p>
-        {% endfor %}
-    </div>
-</section>
 
  <!-- Sección Telefonía -->
 <section aria-labelledby="telefonia-title">
