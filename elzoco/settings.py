@@ -17,7 +17,7 @@ SECRET_KEY = 'django-insecure-tu-clave-aqui'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['elzoco.pythonanywhere.com', 'localhost', '127.0.0.1', '*']
 
 
 # Application definition
