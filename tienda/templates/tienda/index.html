@@ -68,7 +68,38 @@
 
     <!-- Contenido principal -->
     <main class="container">
+<section class="reparaciones-section" style="padding: 50px 20px; background-color: #6b6a6877;border-radius: 15px; border-bottom: 2px solid #eee;">
+    <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
+        <h2 class="section-title" style="color: #f5c240; margin-bottom: 30px;">Servicios de Reparación Especializada</h2>
+        
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.05);">
+            
+            <div style="flex: 1; min-width: 300px; text-align: left;">
+                <h3 style="font-size: 1.5rem; margin-bottom: 15px;">¡Reparaciones profesionales! 🛠️📱</h3>
+                <p style="line-height: 1.6; color: #555;">
+                    En <strong>El Zoco</strong> somos expertos en diagnóstico a nivel componente. No des por perdido tu equipo o electronico, nosotros le devolvemos la vida.
+                </p>
+                <ul style="list-style: none; padding: 0; margin: 20px 0;">
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check-circle" style="color: #25d366;"></i> <strong>SmartPhones (Pantallas, centros de carga, etc):</strong> Todas las marcas.</li>
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check-circle" style="color: #25d366;"></i> <strong>Micro-soldadura:</strong> Reparación de tarjetas madre.</li>
+                    <li style="margin-bottom: 10px;"><i class="fas fa-check-circle" style="color: #25d366;"></i> <strong>Televisores:</strong> Especialistas en fallas de encendido.</li>
+                </ul>
+                
+                <a href="https://wa.me/525580867149?text=Hola,%20necesito%20una%20cotización%20para%20una%20reparación" 
+                   target="_blank" 
+                   style="display: inline-flex; align-items: center; background-color: #25d366; color: white; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+                    <i class="fab fa-whatsapp" style="margin-right: 10px; font-size: 1.4rem;"></i> 
+                    Solicitar Cotización Directa
+                </a>
+            </div>
 
+            <div style="flex: 1; min-width: 300px;">
+                <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="Soporte Técnico El Zoco" style="max-width: 70%; border-radius: 10px;">
+            </div>
+        </div>
+    </div>
+</section>
+        
  <!-- Sección Telefonía -->
 <section aria-labelledby="telefonia-title">
     <h2 id="telefonia-title" class="section-title">Telefonia</h2>
@@ -484,7 +515,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <src="{% static 'js/productos.js' %}"></script>
+    <script src="{% static 'js/productos.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>
