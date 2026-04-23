@@ -7,5 +7,6 @@ def index(request):
         'productos_telefonia': Producto.objects.filter(categoria__nombre='Telefonia', disponible=True),
         'productos_moto': Producto.objects.filter(categoria__nombre='Moto Gadgets', disponible=True),
         'productos_hogar': Producto.objects.filter(categoria__nombre='Mascotas y Hogar', disponible=True),
-    }
+        'productos_salud': Producto.objects.filter(categoria__nombre='Deporte y Salud', disponible=True),
+        }
     return render(request, 'tienda/index.html', context)

@@ -187,6 +187,38 @@
         {% empty %}
         <p style="grid-column: 1/-1; text-align: center;">No hay productos disponibles en esta categoría.</p>
         {% endfor %}
+        </div>
+</section>
+
+<section aria-labelledby="deporte-title">
+    <h2 id="deporte-title" class="section-title">Deporte y Salud</h2>
+    <div class="products-grid" id="productos-deporte">
+        {% for producto in productos_salud %}
+        <article class="product-card">
+            {% if producto.badge %}
+            <span class="
+                {% if producto.badge == 'Nuevo' %}badge-top
+                {% elif producto.badge == 'Premium' %}badge-premium
+                {% elif producto.badge == 'Mas Vendido' %}badge-mas-vendido
+                {% endif %}">
+                {{ producto.badge }}
+            </span>
+            {% endif %}
+            
+            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" 
+                onclick="elZocoApp.verDetalles('{{ producto.nombre|escapejs }}', {{ producto.precio }}, '{{ producto.descripcion|escapejs }}', '{{ producto.imagen.url }}', '{{ producto.codigo }}')" 
+                loading="lazy">
+            
+            <h3>{{ producto.nombre }}</h3>
+            <p class="precio-card">${{ producto.precio|floatformat:2 }}</p>
+            
+            <button class="btn-add" onclick="elZocoApp.agregarAlCarrito('{{ producto.nombre|escapejs }}', {{ producto.precio }}, event, '{{ producto.codigo }}')">
+                Añadir al Carrito
+            </button>
+        </article>
+        {% empty %}
+        <p style="grid-column: 1/-1; text-align: center;">No hay productos disponibles en esta categoría.</p>
+        {% endfor %}
     </div>
 </section>
 
