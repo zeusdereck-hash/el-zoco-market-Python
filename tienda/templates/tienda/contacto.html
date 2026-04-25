@@ -36,22 +36,27 @@
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(248, 192, 6, 0.45);
         }
 
         .profile-img {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            margin: 0 auto 1rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 40px;
-            font-weight: bold;
-            border: 4px solid #334155;
-        }
+    width: 120px; /* Un poco más grande para que luzca el logo */
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px solid #334155;
+    overflow: hidden; /* Esto recorta la imagen en forma de círculo */
+    background: white; /* Fondo blanco por si tu logo es transparente */
+}
+
+.profile-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ajusta la imagen sin deformarla */
+}
 
         h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; }
@@ -87,7 +92,9 @@
 <body>
 
 <div class="card">
-    <div class="profile-img">Z</div>
+    <div class="profile-img">
+    <img src="https://elzoco.pythonanywhere.com/static/img/logo.jpg" alt="Logo El Zoco">
+</div>
     <h1>El Zoco Integrate Service</h1>
     <p>Tecnología y Reparaciones</p>
 
