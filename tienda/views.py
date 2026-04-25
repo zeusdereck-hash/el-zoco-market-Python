@@ -9,4 +9,6 @@ def index(request):
         'productos_hogar': Producto.objects.filter(categoria__nombre='Mascotas y Hogar', disponible=True),
         'productos_salud': Producto.objects.filter(categoria__nombre='Deporte y Salud', disponible=True),
         }
+def contacto(request):
+    return render(request, 'tienda/contacto.html')
     return render(request, 'tienda/index.html', context)
