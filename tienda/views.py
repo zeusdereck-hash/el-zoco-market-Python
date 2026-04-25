@@ -8,7 +8,10 @@ def index(request):
         'productos_moto': Producto.objects.filter(categoria__nombre='Moto Gadgets', disponible=True),
         'productos_hogar': Producto.objects.filter(categoria__nombre='Mascotas y Hogar', disponible=True),
         'productos_salud': Producto.objects.filter(categoria__nombre='Deporte y Salud', disponible=True),
-        }
-def contacto(request):
-    return render(request, 'tienda/contacto.html')
+    }
+    # Este return DEBE estar dentro de index (alineado con 'context')
     return render(request, 'tienda/index.html', context)
+
+def contacto(request):
+    # Este return DEBE estar dentro de contacto
+    return render(request, 'tienda/contacto.html')
