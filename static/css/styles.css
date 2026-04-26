@@ -1178,34 +1178,37 @@ footer {
     transform: translateY(-2px);
 }
 
-/* Layout de dos columnas para PC */
 @media (min-width: 768px) {
+    /* Forzamos el ancho del modal */
     .modal-pago {
-        max-width: 650px; /* Un poco más ancho para las 2 columnas */
+        max-width: 700px !important; 
     }
 
+    /* Forzamos las dos columnas */
     .transferencia-container {
-        display: grid;
-        grid-template-columns: 1fr 1.2fr; /* QR izquierda, Datos derecha */
-        align-items: start;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 20px !important;
+        align-items: start !important;
     }
 
+    /* El botón de MP siempre arriba y a todo lo ancho */
     .mp-destacado {
-        grid-column: 1 / -1; /* El botón ocupa todo el ancho arriba */
-        border-bottom: 1px solid #eee;
-        padding-bottom: 15px;
+        grid-column: 1 / -1 !important;
+        display: block !important;
+        width: 100% !important;
     }
 
     .qr-mp-container {
-        border-right: 1px solid #eee;
-        padding-right: 15px;
+        border-right: 1px solid #ddd !important;
+        padding-right: 15px !important;
         margin: 0 !important;
     }
 
     .bank-details {
         margin: 0 !important;
-        padding: 0 0 0 15px !important;
-        border-left: none !important; /* Quitamos la línea azul lateral en PC */
+        padding-left: 15px !important;
+        border-left: none !important;
     }
 }
 
