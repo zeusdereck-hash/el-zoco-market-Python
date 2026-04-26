@@ -323,7 +323,7 @@
         
         <div class="pago-header">
             <i class="fas fa-lock" style="color: var(--gold); margin-right: 10px;"></i>
-            <h2>Finalizar Pago</h2>
+            <h2 style="margin:0; font-size: 1.5rem;">Finalizar Pago</h2>
         </div>
         
         <div class="pago-opciones">
@@ -336,22 +336,22 @@
         </div>
         
         <div id="pago-transferencia" class="pago-seccion active">
-            <div class="transferencia-container">
+            <div class="transferencia-container" id="grid-pago-pc">
                 
                 <div class="mp-destacado">
                     <a href="https://link.mercadopago.com.mx/elzocodis" 
                     target="_blank" 
                     class="btn-mp-grande">
-                        <i class="fab fa-mercadopago"></i> PAGAR AHORA CON MERCADO PAGO
+                        <i class="fab fa-mercadopago" style="margin-right: 10px;"></i> PAGAR CON MERCADO PAGO
                     </a>
-                    <p class="mp-seguro">
-                        <i class="fas fa-lock"></i> Pago seguro (Tarjetas, QR, Transferencia)
+                    <p class="mp-seguro" style="font-size: 0.8rem; margin-top: 8px; color: #666;">
+                        <i class="fas fa-shield-alt"></i> Pago 100% seguro y encriptado
                     </p>
                 </div>
                 
                 <div class="qr-mp-container">
-                    <p class="qr-mp-label">
-                        <i class="fas fa-qrcode"></i> O escanea con tu App de Mercado Pago
+                    <p class="qr-mp-label" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">
+                        <i class="fas fa-qrcode"></i> Escanea con la App
                     </p>
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://link.mercadopago.com.mx/elzocodis" 
                     alt="QR Mercado Pago" 
@@ -360,13 +360,13 @@
                 </div>
                 
                 <div class="bank-details">
-                    <h4 style="margin-bottom: 15px; color: var(--gold);">
-                        <i class="fas fa-university"></i> Datos para Transferencia Directa
+                    <h4 style="margin-bottom: 10px; color: var(--gold); font-size: 0.9rem; text-transform: uppercase;">
+                        <i class="fas fa-university"></i> Transferencia Directa
                     </h4>
-                    <p><strong>Banco:</strong> MERCADO PAGO</p>
-                    <p><strong>CLABE:</strong> 7229 6901 0757 9208 39</p>
-                    <p><strong>Titular:</strong> Oscar Arturo Marquez Cruz</p>
-                    <p><strong>DIMO:</strong> 5580867149 </p>
+                    <p style="margin: 5px 0;"><strong>Banco:</strong> MERCADO PAGO</p>
+                    <p style="margin: 5px 0;"><strong>CLABE:</strong> <code style="background: #eee; padding: 2px 4px; border-radius: 4px;">7229 6901 0757 9208 39</code></p>
+                    <p style="margin: 5px 0;"><strong>Titular:</strong> Oscar Arturo Marquez Cruz</p>
+                    <p style="margin: 5px 0;"><strong>DIMO:</strong> 5580867149</p>
                 </div>
             </div>
         </div>
@@ -377,16 +377,18 @@
                     <i class="fab fa-paypal" aria-hidden="true"></i> Escanea para pagar con PayPal
                 </p>
                 <img src="{% static 'img/estructura/elzocopay.jpeg' %}" alt="Código QR para pago" class="qr-image" loading="lazy">
-                <p class="qr-instrucciones">1. Abre tu app de PayPal<br>2. Escanea el código<br>3. Confirma el pago</p>
+                <div class="qr-instrucciones">
+                    <p>1. Abre tu app de PayPal</p>
+                    <p>2. Escanea el código y confirma el pago</p>
+                </div>
             </div>
         </div>
 
-        <button class="whatsapp-btn" onclick="elZocoApp.enviarPedido()" aria-label="Confirmar pedido por WhatsApp">
-            <i class="fab fa-whatsapp" aria-hidden="true"></i> Confirmar y enviar comprobante
+        <button class="whatsapp-btn" onclick="elZocoApp.enviarPedido()" style="margin-top: 20px;">
+            <i class="fab fa-whatsapp" aria-hidden="true"></i> CONFIRMAR Y ENVIAR COMPROBANTE
         </button>
     </div>
-</div>
-    <!-- Modal Detalles del Producto -->
+</div>    <!-- Modal Detalles del Producto -->
     <div class="modal" id="modalDetalles" role="dialog" aria-modal="true" aria-label="Detalles del producto">
         <div class="modal-content modal-detalles">
             <button class="close-btn" onclick="elZocoApp.cerrarModales()" aria-label="Cerrar">&times;</button>
