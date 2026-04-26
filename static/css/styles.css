@@ -1079,37 +1079,6 @@ footer {
     font-size: 0.9rem;
     line-height: 1.5;
 }
-
-/* Tarjeta Section */
-.tarjeta-container {
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-.form-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.btn-pagar-tarjeta {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 15px;
-    width: 100%;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-pagar-tarjeta:hover {
-    background: #2980b9;
-    transform: scale(1.02);
-}
-
 /* Transferencia Section */
 .transferencia-container {
     background: #f9f9f9;
