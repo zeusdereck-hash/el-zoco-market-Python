@@ -317,7 +317,6 @@
         </div>
     </div>
 
-<!-- Modal Pago MEJORADO -->
 <div class="modal" id="modalPago" role="dialog" aria-modal="true" aria-label="Finalizar pago">
     <div class="modal-content modal-pago">
         <button class="close-btn" onclick="elZocoApp.cerrarModales()" aria-label="Cerrar">&times;</button>
@@ -327,21 +326,52 @@
             <h2>Finalizar Pago</h2>
         </div>
         
-<!-- Opciones de pago -->
-<div class="pago-opciones">
-    <button class="pago-opcion activa" onclick="elZocoApp.mostrarPago('qr', event)">
-        <i class="fab fa-paypal"></i> PayPal / QR
-    </button>
-    <button class="pago-opcion" onclick="elZocoApp.mostrarPago('tarjeta', event)">
-        <i class="fas fa-credit-card"></i> Tarjeta
-    </button>
-    <button class="pago-opcion" onclick="elZocoApp.mostrarPago('transferencia', event)">
-    <i class="fab fa-mercadopago"></i> Mercado Pago
-</button>
-</div>
+        <div class="pago-opciones">
+            <button class="pago-opcion activa" onclick="elZocoApp.mostrarPago('transferencia', event)">
+                <i class="fab fa-mercadopago"></i> Mercado Pago
+            </button>
+            <button class="pago-opcion" onclick="elZocoApp.mostrarPago('qr', event)">
+                <i class="fab fa-paypal"></i> PayPal
+            </button>
+        </div>
         
-        <!-- Sección QR (activa por defecto) -->
-        <div id="pago-qr" class="pago-seccion active">
+        <div id="pago-transferencia" class="pago-seccion active">
+            <div class="transferencia-container">
+                
+                <div class="mp-destacado">
+                    <a href="https://link.mercadopago.com.mx/elzocodis" 
+                    target="_blank" 
+                    class="btn-mp-grande">
+                        <i class="fab fa-mercadopago"></i> PAGAR AHORA CON MERCADO PAGO
+                    </a>
+                    <p class="mp-seguro">
+                        <i class="fas fa-lock"></i> Pago seguro (Tarjetas, QR, Transferencia)
+                    </p>
+                </div>
+                
+                <div class="qr-mp-container">
+                    <p class="qr-mp-label">
+                        <i class="fas fa-qrcode"></i> O escanea con tu App de Mercado Pago
+                    </p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://link.mercadopago.com.mx/elzocodis" 
+                    alt="QR Mercado Pago" 
+                    class="qr-mp-image"
+                    loading="lazy">
+                </div>
+                
+                <div class="bank-details">
+                    <h4 style="margin-bottom: 15px; color: var(--gold);">
+                        <i class="fas fa-university"></i> Datos para Transferencia Directa
+                    </h4>
+                    <p><strong>Banco:</strong> MERCADO PAGO</p>
+                    <p><strong>CLABE:</strong> 7229 6901 0757 9208 39</p>
+                    <p><strong>Titular:</strong> Oscar Arturo Marquez Cruz</p>
+                    <p><strong>DIMO:</strong> 5580867149 </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="pago-qr" class="pago-seccion">
             <div class="qr-container">
                 <p class="qr-label">
                     <i class="fab fa-paypal" aria-hidden="true"></i> Escanea para pagar con PayPal
@@ -350,82 +380,7 @@
                 <p class="qr-instrucciones">1. Abre tu app de PayPal<br>2. Escanea el código<br>3. Confirma el pago</p>
             </div>
         </div>
-        
-        <!-- Sección Tarjeta (oculta inicialmente) -->
-        <div id="pago-tarjeta" class="pago-seccion">
-            <div class="tarjeta-container">
-                <h3>Pago con Tarjeta</h3>
-                <form id="formTarjeta" onsubmit="event.preventDefault(); alert('Procesando pago...')">
-                    <div class="form-group">
-                        <label>Número de tarjeta</label>
-                        <input type="text" placeholder="1234 5678 9012 3456" maxlength="19">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label>MM/AA</label>
-                            <input type="text" placeholder="12/25" maxlength="5">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>CVV</label>
-                            <input type="text" placeholder="123" maxlength="3">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Nombre en tarjeta</label>
-                        <input type="text" placeholder="Como aparece en tarjeta">
-                    </div>
-                    <button type="submit" class="btn-pagar-tarjeta">Pagar ahora</button>
-                </form>
-            </div>
-        </div>
-        
-<!-- Sección Mercado Pago (antes Transferencia) -->
-<div id="pago-transferencia" class="pago-seccion">
-    <div class="transferencia-container">
-        
-        <!-- BOTÓN GRANDE DE MERCADO PAGO (ARRIBA) -->
-        <div class="mp-destacado">
-            <a href="https://link.mercadopago.com.mx/elzocodis" 
-            target="_blank" 
-            class="btn-mp-grande">
-                <i class="fab fa-mercadopago"></i> PAGAR AHORA CON MERCADO PAGO
-            </a>
-            <p class="mp-seguro">
-                <i class="fas fa-lock"></i> Pago seguro vía Mercado Pago
-            </p>
-        </div>
-        
-        <!-- QR GENERADO (OPCIONAL PERO PROFESIONAL) -->
-        <div class="qr-mp-container">
-            <p class="qr-mp-label">
-                <i class="fas fa-qrcode"></i> O escanea este código QR
-            </p>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://link.mercadopago.com.mx/elzocodis" 
-            alt="QR Mercado Pago" 
-            class="qr-mp-image"
-            loading="lazy">
-            <p class="qr-mp-instrucciones">
-                Abre tu app de Mercado Pago y escanea
-            </p>
-        </div>
-        
-        <!-- INFORMACIÓN BANCARIA (ABAJO) -->
-        <div class="bank-details">
-            <h4 style="margin-bottom: 15px; color: var(--gold);">
-                <i class="fas fa-university"></i> Datos para Transferencia
-            </h4>
-            <p><strong>Banco:</strong> MERCADO PAGO</p>
-            <p><strong>No. de Tarjeta:</strong> 5428 7801 1002 5319</p>
-            <p><strong>CLABE:</strong> 7229 6901 0757 9208 39</p>
-            <p><strong>Titular:</strong> Oscar Arturo Marquez Cruz</p>
-            <p><strong>DIMO:</strong> 5580867149 </p>
-            <p class="nota-transferencia">
-                <i class="fas fa-info-circle"></i> Si pagas por transferencia, envía tu comprobante por WhatsApp
-            </p>
-        </div>
-        
-    </div>
-</div>
+
         <button class="whatsapp-btn" onclick="elZocoApp.enviarPedido()" aria-label="Confirmar pedido por WhatsApp">
             <i class="fab fa-whatsapp" aria-hidden="true"></i> Confirmar y enviar comprobante
         </button>
