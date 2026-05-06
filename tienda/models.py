@@ -65,9 +65,10 @@ class MovimientoCaja(models.Model):
 # --- SISTEMA DE DEUDAS Y ABONOS ---
 
 class Deuda(models.Model):
-    persona = models.CharField(max_length=200, verbose_name="Cliente o Proveedor")
+    persona = models.CharField(max_length=200, verbose_name="Proveedor")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_limite = models.DateField(verbose_name="Fecha de Pago")
+    yo_debo = models.BooleanField(default=False, verbose_name="¿Es deuda mía?")
 
     @property
     def saldo_pendiente(self):

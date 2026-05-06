@@ -24,7 +24,7 @@ def exportar_deudas_excel_custom(modeladmin, request, queryset):
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     center_align = Alignment(horizontal="center", vertical="center")
 
-    headers = ['PROVEEDORES', 'Deuda', 'Abonado', 'Fechas de Abonos', 'Resto deuda', '% avance']
+    headers = ['Proveedor', 'Deuda', 'Abonado', 'Fechas de Abonos', 'Resto deuda', '% avance']
     ws.append(headers)
 
     for cell in ws[1]:
@@ -88,10 +88,12 @@ class AbonoInline(admin.TabularInline):
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
     # 1. Agregamos 'avance_pago' al list_display
+    exclude = ('yo_debo',)
     list_display = ('persona', 'monto_total', 'saldo_pendiente', 'avance_pago', 'fecha_limite')
     list_filter = ('fecha_limite',)
     inlines = [AbonoInline]
     actions = [exportar_deudas_excel_custom]
+    
 
     # Plantilla para los totales en la parte superior
     change_list_template = "admin/tienda/deuda/change_list.html"
@@ -108,11 +110,11 @@ class DeudaAdmin(admin.ModelAdmin):
         if porcentaje < 30:
             color = "#ff4d4d"  # Rojo
         elif porcentaje < 70:
-            color = "#ffa64d"  # Naranja
+            color = "#f57e06"  # Naranja
         elif porcentaje < 100:
-            color = "#2eb82e"  # Verde
+            color = "#fbff0e"  # Verde
         else:
-            color = "#007bff"  # Azul (Pagado)
+            color = "#15ff00"  # Azul (Pagado)
 
         return format_html(
             '''
