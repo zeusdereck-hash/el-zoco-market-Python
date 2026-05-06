@@ -1,0 +1,27 @@
+/* 1. Forzamos a que solo se muestre LA PRIMERA imagen que encuentre en el login */
+.login-logo a img:nth-child(n+2) {
+    display: none !important;
+}
+
+/* 2. Si Jazzmin está creando dos etiquetas <a> distintas, ocultamos la segunda */
+.login-logo a:nth-child(n+2) {
+    display: none !important;
+}
+
+/* 3. Por si acaso está usando el texto del site_brand junto al logo */
+.login-logo .brand-text, 
+.login-logo i, 
+.login-logo span:not(.brand-image) {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* 4. Aseguramos que el que queda sea el rey de la pantalla */
+.login-logo img {
+    max-width: 140px !important;
+    width: 140px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    display: block !important;
+}

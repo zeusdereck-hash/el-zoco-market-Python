@@ -1,15 +1,11 @@
 """
 Django settings for elzoco project.
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-tu-clave-aqui'
@@ -66,8 +62,6 @@ WSGI_APPLICATION = 'elzoco.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -77,73 +71,60 @@ DATABASES = {
 
 
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
-LANGUAGE_CODE = 'es-mx'  # Español de México 🇲🇽
-
-TIME_ZONE = 'America/Mexico_City'  # Horario de México
-
+LANGUAGE_CODE = 'es-mx'
+TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
-
 USE_TZ = True
-
 USE_THOUSAND_SEPARATOR = True
 THOUSAND_SEPARATOR = ','
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
+# Asegúrate de que STATIC_URL sea este
 STATIC_URL = '/static/'
 
-# Dejamos esta lista vacía para evitar el error (staticfiles.E002)
-# Django buscará automáticamente los archivos de Jazzmin en sus carpetas internas
-STATICFILES_DIRS = []
+# ESTA ES LA CORRECCIÓN CLAVE:
+# Apuntamos directamente a la carpeta static que se ve en tu captura
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
-# Esta es la carpeta donde PythonAnywhere buscará los archivos
-STATIC_ROOT = BASE_DIR / 'static'
+# STATIC_ROOT debe ser una carpeta diferente para que no choque
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Media files (para imágenes subidas por usuarios)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+# --- CONFIGURACIÓN DE JAZZMIN (MEJORADA) ---
 JAZZMIN_SETTINGS = {
     # Títulos y Marcas
     "site_title": "El Zoco Admin",
-    "site_header": "El Zoco Market",
+    "site_header": "El Zoco",
     "site_brand": "El Zoco",
-    "welcome_sign": "Bienvenido a la administración de El Zoco Market",
+    "site_logo": "img/estructura/ELZOCO.png",
+    "login_logo": None,
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    "custom_css": "css/custom_admin.css",
+    
+    # Personalización del Login
+    "welcome_sign": "Bienvenido A El Zoco",
     "copyright": "El Zoco Market Ltd",
+    "user_avatar": None,
 
     # Interfaz y Menú
     "navigation_expanded": True,
     "show_sidebar": True,
-    "show_ui_builder": False,      # <-- ESTO ACTIVA EL ENGRANE DE CONFIGURACIÓN
-    "related_modal_active": True,  # <-- ESTO ACTIVA LAS VENTANAS FLOTANTES
+    "show_ui_builder": False,      
+    "related_modal_active": True,  
 
     # Iconos para las secciones (Font Awesome 5)
     "icons": {
@@ -153,13 +134,14 @@ JAZZMIN_SETTINGS = {
         "tienda.Categoria": "fas fa-tags",
         "tienda.Deuda": "fas fa-hand-holding-usd",
         "tienda.MovimientoCaja": "fas fa-cash-register",
+        "tienda.Abono": "fas fa-receipt",
     },
 
-    # Orden de las secciones en el menú
+    # Orden de las secciones
     "order_with_respect_to": ["tienda", "auth"],
 }
 
-# --- Personalización de Colores (UI Customizer) ---
+# --- Personalización de Colores y Modo Oscuro (UI Customizer) ---
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,
@@ -173,15 +155,18 @@ JAZZMIN_UI_TWEAKS = {
     "layout_boxed": False,
     "footer_fixed": False,
     "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-primary",
+    "sidebar": "sidebar-dark-primary", # Sidebar oscuro
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": False,
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
-    "theme": "flatly",
-    "dark_mode_theme": None,
+    
+    # Tema OSCURO por defecto
+    "theme": "darkly", 
+    "dark_mode_theme": "darkly",
+    
     "button_classes": {
         "primary": "btn-primary",
         "secondary": "btn-secondary",

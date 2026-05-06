@@ -1,0 +1,24 @@
+/* Oculta el logo duplicado en la pantalla de login */
+.login-logo a:nth-child(2) {
+    display: none !important;
+}
+
+/* Estilo para el logo único */
+body.login-page .login-logo {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+}
+
+body.login-page .login-logo img {
+    max-width: 150px !important;
+    height: auto !important;
+    border-radius: 50% !important; /* Mantiene la forma circular del logo de El Zoco */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+}
+
+/* Ajuste para el cuadro de login */
+.login-box {
+    margin-top: 5vh !important;
+}

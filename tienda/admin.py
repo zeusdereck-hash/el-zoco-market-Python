@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from django.db.models import Sum # Importamos para cálculos más rápidos
 from .models import Categoria, Producto, MovimientoCaja, Deuda, Abono
+from django.utils.html import format_html
 
 # --- REPORTE PERSONALIZADO EL ZOCO (NARANJA / ROJO) ---
 
@@ -82,44 +83,76 @@ class ProductoAdmin(admin.ModelAdmin):
 class AbonoInline(admin.TabularInline):
     model = Abono
     extra = 1
-    readonly_fields = ('fecha',)
+    fields = ('monto', 'fecha')
 
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
-    list_display = ('persona', 'monto_total', 'saldo_pendiente', 'yo_debo', 'fecha_limite')
-    list_filter = ('yo_debo', 'fecha_limite')
+    # 1. Agregamos 'avance_pago' al list_display
+    list_display = ('persona', 'monto_total', 'saldo_pendiente', 'avance_pago', 'fecha_limite')
+    list_filter = ('fecha_limite',)
     inlines = [AbonoInline]
     actions = [exportar_deudas_excel_custom]
 
-    # IMPORTANTE: Indica la ruta de la plantilla personalizada
+    # Plantilla para los totales en la parte superior
     change_list_template = "admin/tienda/deuda/change_list.html"
 
+    # --- MÉTODO DEL SEMÁFORO (Círculo de Porcentaje) ---
+    def avance_pago(self, obj):
+        total = float(obj.monto_total)
+        pendiente = float(obj.saldo_pendiente)
+        pagado = total - pendiente
+        
+        porcentaje = int((pagado / total) * 100) if total > 0 else 0
+
+        # Lógica de colores por progreso
+        if porcentaje < 30:
+            color = "#ff4d4d"  # Rojo
+        elif porcentaje < 70:
+            color = "#ffa64d"  # Naranja
+        elif porcentaje < 100:
+            color = "#2eb82e"  # Verde
+        else:
+            color = "#007bff"  # Azul (Pagado)
+
+        return format_html(
+            '''
+            <div style="display: flex; align-items: center; justify-content: center; 
+                        background-color: {}; color: white; width: 40px; height: 40px; 
+                        border-radius: 50%; font-weight: bold; font-size: 11px; 
+                        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);">
+                {}%
+            </div>
+            ''',
+            color,
+            porcentaje
+        )
+    
+    avance_pago.short_description = '% Avance'
+
+    # --- VISTA DE LISTADO CON TOTALES ---
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
 
         try:
-            # Obtenemos el queryset actual (considerando filtros y búsquedas)
+            # qs respeta los filtros aplicados por el usuario
             qs = response.context_data['cl'].queryset
         except (AttributeError, KeyError):
             return response
 
-        # Cálculo de totales eficiente usando agregación de base de datos
+        # Agregaciones eficientes
         total_deuda = qs.aggregate(total=Sum('monto_total'))['total'] or 0
-
-        # Sumamos todos los abonos relacionados al queryset actual
+        # Filtramos abonos que pertenecen a las deudas del queryset actual
         total_abonado = Abono.objects.filter(deuda__in=qs).aggregate(total=Sum('monto'))['total'] or 0
-
         total_pendiente = total_deuda - total_abonado
 
-        # Enviamos los datos al template
-        extra_context = extra_context or {}
-        extra_context['resumen_zoco'] = {
+        # Datos para el resumen en el template
+        metrics = {
             'total': total_deuda,
             'abonado': total_abonado,
             'pendiente': total_pendiente,
         }
 
-        response.context_data.update(extra_context)
+        response.context_data['resumen_zoco'] = metrics
         return response
 
 @admin.register(MovimientoCaja)

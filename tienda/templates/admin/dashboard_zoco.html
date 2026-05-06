@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static humanize %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Estilos personalizados para el Dashboard de El Zoco */
+    .content-wrapper { background-color: #f4f6f9; }
+    
+    .card-balance {
+        background: #ffffff;
+        border-radius: 15px;
+        border-top: 5px solid #001f3f; /* Color Navy de El Zoco */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .balance-title { font-weight: 700; color: #6c757d; text-transform: uppercase; font-size: 0.9rem; }
+    
+    .balance-value {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin: 10px 0;
+    }
+
+    .text-negative { color: #d9534f !important; }
+    .text-positive { color: #28a745 !important; }
+
+    /* Estilo de filas de desglose */
+    .finance-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+    }
+    .finance-row:last-child { border-bottom: none; }
+    .finance-row span:first-child { color: #495057; font-weight: 500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header de la sección -->
+    <div class="row mb-4">
+        <div class="col-sm-6">
+            <h1 class="m-0 text-dark font-weight-bold">Resumen de Finanzas</h1>
+        </div>
+    </div>
+
+    <!-- Bloque 1: Balance General -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card-balance">
+                <span class="balance-title">Efectivo Total en Caja</span>
+                <div class="balance-value {% if balance < 0 %}text-negative{% else %}text-positive{% endif %}">
+                    ${{ balance|intcomma }}
+                </div>
+                <p class="text-muted"><i class="far fa-clock"></i> Actualizado al: {{ hoy|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloque 2: Widgets Rápidos (Estilo Jazzmin/AdminLTE) -->
+    <div class="row">
+        <div class="col-lg-6 col-md-6">
+            <div class="small-box bg-success shadow">
+                <div class="inner">
+                    <h3>${{ ingreso_hoy|intcomma }}</h3>
+                    <p>Ingresos del Día</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6">
+            <div class="small-box bg-danger shadow">
+                <div class="inner">
+                    <h3>${{ egreso_hoy|intcomma }}</h3>
+                    <p>Egresos del Día</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloque 3: Detalles y Deudas -->
+    <div class="row mt-3">
+        <!-- Detalle de Flujo -->
+        <div class="col-md-7">
+            <div class="card card-outline card-navy shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold"><i class="fas fa-list-ul mr-2"></i> Operaciones Históricas</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="finance-row">
+                        <span><i class="fas fa-plus-circle text-success mr-2"></i> Total de Ventas/Ingresos</span>
+                        <span class="text-positive font-weight-bold">+ ${{ ingresos_totales|intcomma }}</span>
+                    </div>
+                    <div class="finance-row">
+                        <span><i class="fas fa-minus-circle text-danger mr-2"></i> Total Pagado a Proveedores</span>
+                        <span class="text-negative font-weight-bold">- ${{ egresos_totales|intcomma }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerta de Deudas -->
+        <div class="col-md-5">
+            <div class="card bg-gradient-warning shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="font-weight-bold text-dark">Pendiente por Pagar</h5>
+                    <h2 class="display-4 font-weight-bold text-dark">${{ pendiente_proveedores|intcomma }}</h2>
+                    <p class="text-dark opacity-7">Saldo total adeudado a proveedores</p>
+                    <a href="/admin/tienda/deuda/" class="btn btn-dark btn-sm mt-2">
+                        Ver Lista de Deudas <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

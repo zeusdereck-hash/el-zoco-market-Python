@@ -1,4 +1,11 @@
-db.sqlite3
-*.pyc
+# Entornos virtuales
+venv/
+ENV/
+env/
+
+# Caché de Python
 __pycache__/
-media/
+*.pyc
+
+# Archivos de base de datos local (opcional pero recomendado)
+*.sqlite3

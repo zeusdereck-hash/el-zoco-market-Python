@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from django.db.models import Sum
+from django.utils import timezone
 
 # --- MODELOS DE LA TIENDA ---
 
@@ -59,13 +60,13 @@ class MovimientoCaja(models.Model):
     class Meta:
         verbose_name = "Movimiento de Caja"
         verbose_name_plural = "Movimientos de Caja"
+        ordering = ['-monto']
 
 # --- SISTEMA DE DEUDAS Y ABONOS ---
 
 class Deuda(models.Model):
     persona = models.CharField(max_length=200, verbose_name="Cliente o Proveedor")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
-    yo_debo = models.BooleanField(default=False, verbose_name="¿Es una deuda mía?")
     fecha_limite = models.DateField(verbose_name="Fecha de Pago")
 
     @property
@@ -75,21 +76,20 @@ class Deuda(models.Model):
         return self.monto_total - total_abonado
 
     def __str__(self):
-        tipo = "Debo" if self.yo_debo else "Me deben"
-        return f"{tipo} - {self.persona} (${self.saldo_pendiente})"
+        return f"{self.persona} (${self.saldo_pendiente})"
 
     class Meta:
         verbose_name = "Deuda"
-        verbose_name_plural = "Deudas"
+        verbose_name_plural = "Administracion De Deudas"
 
 class Abono(models.Model):
     deuda = models.ForeignKey(Deuda, on_delete=models.CASCADE, related_name='abonos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
-    fecha = models.DateTimeField(auto_now_add=True)
-
+    fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha del Abono")
     def __str__(self):
         return f"Abono de ${self.monto} - {self.deuda.persona}"
 
     class Meta:
         verbose_name = "Abono"
         verbose_name_plural = "Abonos"
+        ordering = ['-fecha']
