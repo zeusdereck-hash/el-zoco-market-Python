@@ -89,7 +89,7 @@ class AbonoInline(admin.TabularInline):
 class DeudaAdmin(admin.ModelAdmin):
     # 1. Agregamos 'avance_pago' al list_display
     exclude = ('yo_debo',)
-    list_display = ('persona', 'monto_total', 'saldo_pendiente', 'avance_pago', 'fecha_limite')
+    list_display = ('persona', 'monto_total', 'saldo_pendiente', 'avance_pago', 'fecha_limite', 'imprimir_ticket_boton')
     list_filter = ('fecha_limite',)
     inlines = [AbonoInline]
     actions = [exportar_deudas_excel_custom]
@@ -97,6 +97,19 @@ class DeudaAdmin(admin.ModelAdmin):
 
     # Plantilla para los totales en la parte superior
     change_list_template = "admin/tienda/deuda/change_list.html"
+
+    def imprimir_ticket_boton(self, obj):
+        # Buscamos el último abono asociado a esta deuda
+        ultimo_abono = obj.abonos.first() 
+        
+        if ultimo_abono:
+            return format_html(
+                '<a class="button" href="/tienda/ticket/abono/{}/" target="_blank">🎟️ Último Abono</a>',
+                ultimo_abono.id
+            )
+        return "Sin abonos"
+    
+    imprimir_ticket_boton.short_description = "Comprobante"
 
     # --- MÉTODO DEL SEMÁFORO (Círculo de Porcentaje) ---
     def avance_pago(self, obj):
@@ -160,3 +173,13 @@ class DeudaAdmin(admin.ModelAdmin):
 @admin.register(MovimientoCaja)
 class MovimientoCajaAdmin(admin.ModelAdmin):
     list_display = ('tipo', 'descripcion', 'monto', 'fecha')
+
+    def imprimir_ticket(self, obj):
+        return format_html(
+            '<a class="button" href="/tienda/ticket/venta/{}/" target="_blank">🎟️ Ticket</a>',
+            obj.id
+        )
+    imprimir_ticket.short_description = "Ticket"
+    
+    # Agrégalo a list_display
+    list_display = ('tipo', 'descripcion', 'monto', 'fecha', 'imprimir_ticket')

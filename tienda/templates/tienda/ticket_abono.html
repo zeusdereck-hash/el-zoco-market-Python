@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Optimización para papel térmico 58mm */
+        body { 
+            width: 58mm; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 10px; 
+            margin: 0; 
+            padding: 1mm; 
+            color: #000; 
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .line { border-bottom: 1px dashed black; margin: 4px 0; }
+        
+        /* Contenedor del Logo */
+        .logo-container { margin-bottom: 2mm; }
+        .logo-img { max-width: 40mm; height: auto; filter: grayscale(100%); }
+        
+        .info-vendedor { font-size: 9px; margin-bottom: 2mm; }
+        table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+        .total-section { font-size: 11px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body onload="window.print()">
+    
+    <div class="center">
+        <div class="logo-container">
+            <img src="/static/img/estructura/ELZOCO.png" class="logo-img" alt="Logo">
+        </div>
+        <span class="bold" style="font-size: 12px;">EL ZOCO MARKET</span><br>
+        
+        <div class="info-vendedor">
+            Atendido por: <b>{{ usuario_atendio }}</b><br>
+            ¡Un gusto saludarle!
+        </div>
+    </div>
+
+    <div class="line"></div>
+    <div class="center bold">{{ tipo_comprobante }}</div>
+    <b>Folio:</b> #AB-{{ folio }}<br>
+    <b>Fecha:</b> {{ fecha|date:"d/m/Y H:i" }}<br>
+    <b>Proveedor:</b> {{ proveedor }}
+    <div class="line"></div>
+
+    <div class="center bold">HISTORIAL DE PAGOS</div>
+    <table>
+        <thead>
+            <tr>
+                <th align="left">Fecha</th>
+                <th align="right">Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in historial %}
+            <tr>
+                <td>{{ pago.fecha|date:"d/m/y" }}</td>
+                <td align="right">${{ pago.monto }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="line"></div>
+    
+    <div class="total-section">
+        <table style="margin: 0;">
+            <tr>
+                <td>Total Deuda:</td>
+                <td align="right">${{ monto_total_origin }}</td>
+            </tr>
+            <tr>
+                <td>Total Pagado:</td>
+                <td align="right">-${{ total_pagado }}</td>
+            </tr>
+            <tr class="bold">
+                <td>SALDO PENDIENTE:</td>
+                <td align="right">${{ saldo_restante }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="line"></div>
+    <div class="center">
+        *** Gracias por su Pago ***<br>
+        En El Zoco Siempre un Placer Servirle
+    </div>
+</body>
+</html>

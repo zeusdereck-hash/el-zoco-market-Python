@@ -94,3 +94,34 @@ class Abono(models.Model):
         verbose_name = "Abono"
         verbose_name_plural = "Abonos"
         ordering = ['-fecha']
+
+        # --- SISTEMA DE VENTAS ---
+
+class Venta(models.Model):
+    METODO_PAGO = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TRANSFERENCIA', 'Transferencia/Tarjeta'),
+    ]
+    fecha = models.DateTimeField(auto_now_add=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO, default='EFECTIVO')
+    notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Venta"
+        verbose_name_plural = "Ventas"
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"Venta #{self.id} - {self.fecha.strftime('%d/%m/%Y')}"
+
+class VentaDetalle(models.Model):
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.precio_unitario * self.cantidad
+        super().save(*args, **kwargs)
