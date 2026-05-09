@@ -73,8 +73,17 @@ class Deuda(models.Model):
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_inicio = models.DateField(default=timezone.now, verbose_name="Fecha de Inicio")
     yo_debo = models.BooleanField(default=True, verbose_name="¿Es deuda mía?")
+    
+    # Slots de programación
     cantidad_pagos = models.PositiveIntegerField(default=1, verbose_name="Cantidad de Plazos")
     periodicidad_dias = models.PositiveIntegerField(default=0, verbose_name="Cada cuántos días")
+    monto_por_pago = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        editable=False, 
+        default=0, 
+        verbose_name="Monto por cada pago"
+    )
 
     @property
     def saldo_pendiente(self):
@@ -85,16 +94,20 @@ class Deuda(models.Model):
         return f"{self.persona} (${self.saldo_pendiente})"
 
     def save(self, *args, **kwargs):
+        # Calculamos el monto de cada slot antes de guardar
+        if self.cantidad_pagos > 0:
+            self.monto_por_pago = self.monto_total / self.cantidad_pagos
+        
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
+        # Generación automática de abonos si es nuevo
         if is_new and self.cantidad_pagos > 1 and self.periodicidad_dias > 0:
-            monto_cuota = self.monto_total / self.cantidad_pagos
             for i in range(self.cantidad_pagos):
                 fecha_pago = self.fecha_inicio + timezone.timedelta(days=i * self.periodicidad_dias)
                 Abono.objects.create(
                     deuda=self,
-                    monto=monto_cuota,
+                    monto=self.monto_por_pago,
                     fecha=fecha_pago,
                     pagado=False
                 )

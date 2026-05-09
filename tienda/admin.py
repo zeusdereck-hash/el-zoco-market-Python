@@ -87,18 +87,20 @@ class AbonoInline(admin.TabularInline):
 
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
+    readonly_fields = ('monto_por_pago',)
     fieldsets = (
         ('Información General', {
             'fields': ('persona', 'monto_total', 'fecha_inicio')
         }),
         ('Programación de Pagos', {
-            'fields': ('cantidad_pagos', 'periodicidad_dias'),
+            'fields': ('cantidad_pagos', 'periodicidad_dias','monto_por_pago'),
         }),
     )
 
     list_display = ('persona', 
                     'monto_total',
-                    'esquema_pago', 
+                    'esquema_pago',
+                    'monto_por_pago', 
                     'saldo_pendiente', 
                     'proximo_vencimiento', 
                     'avance_pago', 
