@@ -99,10 +99,10 @@ class DeudaAdmin(admin.ModelAdmin):
 
     list_display = ('persona', 
                     'monto_total',
+                    'saldo_pendiente',
                     'esquema_pago',
+                    'pago_actual',
                     'monto_por_pago', 
-                    'saldo_pendiente', 
-                    'proximo_vencimiento', 
                     'avance_pago', 
                     'imprimir_ticket_boton',
                     )
@@ -115,17 +115,20 @@ class DeudaAdmin(admin.ModelAdmin):
         return "Pago único"
     
     esquema_pago.short_description = "Esquema de Pago"
-    
-    def proximo_vencimiento(self, obj):
-        proximo = obj.abonos.filter(pagado=False).order_by('fecha').first()
-        if proximo:
-            return format_html("<b>{}</b>", proximo.fecha.strftime('%d/%m/%Y'))
-        return "Pagado"
-    
-    proximo_vencimiento.short_description = "Siguiente Pago"
-
+        
     # Plantilla para los totales en la parte superior
     change_list_template = "admin/tienda/deuda/change_list.html"
+
+    def pago_actual(self, obj):
+        pagados = obj.abonos.filter(pagado=True).count()
+        total = obj.cantidad_pagos
+        if total > 1:
+            if pagados >= total:
+                return format_html('<span style="color: #15ff00; font-weight: bold;">Completado</span>')
+            return format_html("Pago <b>{}</b> de <b>{}</b>", pagados, total)
+        return "Pago Único"
+    
+    pago_actual.short_description = "Estado de Pago"
 
     def imprimir_ticket_boton(self, obj):
         # Buscamos el último abono asociado a esta deuda
