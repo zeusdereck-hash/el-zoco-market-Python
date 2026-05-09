@@ -87,13 +87,40 @@ class AbonoInline(admin.TabularInline):
 
 @admin.register(Deuda)
 class DeudaAdmin(admin.ModelAdmin):
-    # 1. Agregamos 'avance_pago' al list_display
-    exclude = ('yo_debo',)
-    list_display = ('persona', 'monto_total', 'saldo_pendiente', 'avance_pago', 'fecha_limite', 'imprimir_ticket_boton')
-    list_filter = ('fecha_limite',)
+    fieldsets = (
+        ('Información General', {
+            'fields': ('persona', 'monto_total', 'fecha_inicio')
+        }),
+        ('Programación de Pagos', {
+            'fields': ('cantidad_pagos', 'periodicidad_dias'),
+        }),
+    )
+
+    list_display = ('persona', 
+                    'monto_total',
+                    'esquema_pago', 
+                    'saldo_pendiente', 
+                    'proximo_vencimiento', 
+                    'avance_pago', 
+                    'imprimir_ticket_boton',
+                    )
+    list_filter = ('fecha_inicio',)
     inlines = [AbonoInline]
-    actions = [exportar_deudas_excel_custom]
+
+    def esquema_pago(self, obj):
+        if obj.cantidad_pagos > 1:
+            return f"{obj.cantidad_pagos} pagos / cada {obj.periodicidad_dias} días"
+        return "Pago único"
     
+    esquema_pago.short_description = "Esquema de Pago"
+    
+    def proximo_vencimiento(self, obj):
+        proximo = obj.abonos.filter(pagado=False).order_by('fecha').first()
+        if proximo:
+            return format_html("<b>{}</b>", proximo.fecha.strftime('%d/%m/%Y'))
+        return "Pagado"
+    
+    proximo_vencimiento.short_description = "Siguiente Pago"
 
     # Plantilla para los totales en la parte superior
     change_list_template = "admin/tienda/deuda/change_list.html"
@@ -125,9 +152,9 @@ class DeudaAdmin(admin.ModelAdmin):
         elif porcentaje < 70:
             color = "#f57e06"  # Naranja
         elif porcentaje < 100:
-            color = "#fbff0e"  # Verde
+            color = "#fbff0eb7"  # Verde
         else:
-            color = "#15ff00"  # Azul (Pagado)
+            color = "#19850f"  # Azul (Pagado)
 
         return format_html(
             '''

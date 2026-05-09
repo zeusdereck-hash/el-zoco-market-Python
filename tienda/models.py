@@ -64,36 +64,58 @@ class MovimientoCaja(models.Model):
 
 # --- SISTEMA DE DEUDAS Y ABONOS ---
 
+from django.db import models
+from django.utils import timezone
+from django.db.models import Sum
+
 class Deuda(models.Model):
-    persona = models.CharField(max_length=200, verbose_name="Proveedor")
+    persona = models.CharField(max_length=200, verbose_name="Proveedor / Acreedor")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
-    fecha_limite = models.DateField(verbose_name="Fecha de Pago")
-    yo_debo = models.BooleanField(default=False, verbose_name="¿Es deuda mía?")
+    fecha_inicio = models.DateField(default=timezone.now, verbose_name="Fecha de Inicio")
+    yo_debo = models.BooleanField(default=True, verbose_name="¿Es deuda mía?")
+    cantidad_pagos = models.PositiveIntegerField(default=1, verbose_name="Cantidad de Plazos")
+    periodicidad_dias = models.PositiveIntegerField(default=0, verbose_name="Cada cuántos días")
 
     @property
     def saldo_pendiente(self):
-        # Calcula el saldo restando los abonos del monto total
-        total_abonado = self.abonos.aggregate(total=Sum('monto'))['total'] or 0
+        total_abonado = self.abonos.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
         return self.monto_total - total_abonado
 
     def __str__(self):
         return f"{self.persona} (${self.saldo_pendiente})"
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        if is_new and self.cantidad_pagos > 1 and self.periodicidad_dias > 0:
+            monto_cuota = self.monto_total / self.cantidad_pagos
+            for i in range(self.cantidad_pagos):
+                fecha_pago = self.fecha_inicio + timezone.timedelta(days=i * self.periodicidad_dias)
+                Abono.objects.create(
+                    deuda=self,
+                    monto=monto_cuota,
+                    fecha=fecha_pago,
+                    pagado=False
+                )
+
     class Meta:
         verbose_name = "Deuda"
-        verbose_name_plural = "Administracion De Deudas"
+        verbose_name_plural = "Administración De Deudas"
 
 class Abono(models.Model):
     deuda = models.ForeignKey(Deuda, on_delete=models.CASCADE, related_name='abonos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
-    fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha del Abono")
+    fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha de Pago/Programada")
+    pagado = models.BooleanField(default=True, verbose_name="¿Pagado?")
+
     def __str__(self):
         return f"Abono de ${self.monto} - {self.deuda.persona}"
 
     class Meta:
         verbose_name = "Abono"
         verbose_name_plural = "Abonos"
-        ordering = ['-fecha']
+        ordering = ['fecha']
 
         # --- SISTEMA DE VENTAS ---
 
