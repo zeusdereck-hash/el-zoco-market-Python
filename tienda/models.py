@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.text import slugify
 from django.db.models import Sum
 from django.utils import timezone
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 # --- MODELOS DE LA TIENDA ---
 
@@ -64,10 +66,6 @@ class MovimientoCaja(models.Model):
 
 # --- SISTEMA DE DEUDAS Y ABONOS ---
 
-from django.db import models
-from django.utils import timezone
-from django.db.models import Sum
-
 class Deuda(models.Model):
     persona = models.CharField(max_length=200, verbose_name="Proveedor / Acreedor")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
@@ -93,15 +91,28 @@ class Deuda(models.Model):
     def __str__(self):
         return f"{self.persona} (${self.saldo_pendiente})"
 
-    def save(self, *args, **kwargs):
-        # Calculamos el monto de cada slot antes de guardar
+    def actualizar_cuota(self):
+        """Recalcula el monto por pago basado en el saldo pendiente actual"""
+        saldo = self.saldo_pendiente
         if self.cantidad_pagos > 0:
-            self.monto_por_pago = self.monto_total / self.cantidad_pagos
+            nuevo_monto = saldo / self.cantidad_pagos
+            # Usamos update para evitar disparar señales recursivas
+            Deuda.objects.filter(pk=self.pk).update(monto_por_pago=nuevo_monto)
+
+    def save(self, *args, **kwargs):
+        # Al guardar manualmente, calculamos según el saldo o monto total
+        if self.pk:
+            saldo = self.saldo_pendiente
+        else:
+            saldo = self.monto_total
+
+        if self.cantidad_pagos > 0:
+            self.monto_por_pago = saldo / self.cantidad_pagos
         
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Generación automática de abonos si es nuevo
+        # Generación automática de abonos (solo para deudas nuevas)
         if is_new and self.cantidad_pagos > 1 and self.periodicidad_dias > 0:
             for i in range(self.cantidad_pagos):
                 fecha_pago = self.fecha_inicio + timezone.timedelta(days=i * self.periodicidad_dias)
@@ -130,7 +141,7 @@ class Abono(models.Model):
         verbose_name_plural = "Abonos"
         ordering = ['fecha']
 
-        # --- SISTEMA DE VENTAS ---
+# --- SISTEMA DE VENTAS ---
 
 class Venta(models.Model):
     METODO_PAGO = [
@@ -160,3 +171,12 @@ class VentaDetalle(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal = self.precio_unitario * self.cantidad
         super().save(*args, **kwargs)
+
+# --- SEÑALES (Signals) ---
+# Esto automatiza el recálculo al crear o eliminar abonos
+
+@receiver(post_save, sender=Abono)
+@receiver(post_delete, sender=Abono)
+def actualizar_deuda_al_abonar(sender, instance, **kwargs):
+    """Llamamos al método de recálculo de la deuda cada vez que hay cambios en sus abonos"""
+    instance.deuda.actualizar_cuota()
