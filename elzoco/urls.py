@@ -2,9 +2,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+# Importamos el sitio personalizado desde tu app tienda
+from tienda.admin import admin_site 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # Reemplazamos el admin estándar por el personalizado de El Zoco
+    path('admin/', admin_site.urls),
     path('', include('tienda.urls')),
 ]
 
