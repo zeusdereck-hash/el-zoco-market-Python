@@ -3,15 +3,50 @@ from django.contrib.auth.models import User, Group
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from django.db.models import Sum 
+from django.db.models import Sum
+from django.utils import timezone 
 from .models import Categoria, Producto, MovimientoCaja, Deuda, Abono, Venta 
 from django.utils.html import format_html
 
 # --- CONFIGURACIÓN DEL SITIO ADMINISTRATIVO PERSONALIZADO ---
 
+# admin.py
+
 class ElZocoAdminSite(admin.AdminSite):
     site_header = "El Zoco Market - Panel de Control"
     index_title = "Administración del Sistema"
+    index_template = 'admin/dashboard_zoco.html'
+
+    def index(self, request, extra_context=None):
+        from .models import MovimientoCaja, Deuda, Abono
+        from django.db.models import Sum
+        
+        # --- CÁLCULOS DE CAJA ---
+        ingresos_totales = MovimientoCaja.objects.filter(tipo='INGRESO').aggregate(total=Sum('monto'))['total'] or 0
+        egresos_totales = MovimientoCaja.objects.filter(tipo='GASTO').aggregate(total=Sum('monto'))['total'] or 0
+        
+        # --- CÁLCULOS DE DEUDAS (Tarjetas nuevas) ---
+        deudas_qs = Deuda.objects.all()
+        # Monto total de lo que se ha pactado con proveedores
+        total_deuda_original = deudas_qs.aggregate(total=Sum('monto_total'))['total'] or 0
+        
+        # Saldo pendiente real (suma de lo que falta en cada deuda)
+        pendiente_proveedores = sum(d.saldo_pendiente for d in deudas_qs)
+        
+        # Total ya pagado (Abonos realizados)
+        total_pagado_deudas = Abono.objects.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
+
+        extra_context = extra_context or {}
+        extra_context.update({
+            'balance': ingresos_totales - egresos_totales,
+            'ingresos_totales': ingresos_totales,
+            'egresos_totales': egresos_totales,
+            'pendiente_proveedores': pendiente_proveedores,
+            'total_deuda_original': total_deuda_original,
+            'total_pagado_deudas': total_pagado_deudas,
+        })
+        
+        return super().index(request, extra_context)
 
     def get_app_list(self, request, app_label=None):
         app_dict = self._build_app_dict(request, app_label)
@@ -122,6 +157,7 @@ class AbonoInline(admin.TabularInline):
 
 @admin.register(Deuda, site=admin_site)
 class DeudaAdmin(admin.ModelAdmin):
+    actions = [exportar_deudas_excel_custom]
     readonly_fields = ('monto_por_pago',)
     fieldsets = (
         ('Información General', {'fields': ('persona', 'monto_total', 'fecha_inicio')}),
@@ -129,6 +165,24 @@ class DeudaAdmin(admin.ModelAdmin):
     )
     list_display = ('persona', 'monto_total', 'saldo_pendiente', 'pago_actual', 'monto_por_pago', 'avance_pago', 'imprimir_ticket_boton')
     inlines = [AbonoInline]
+
+    def changelist_view(self, request, extra_context=None):
+        # 1. Cálculos de Deudas sin decimales
+        deudas_qs = Deuda.objects.all()
+        
+        # Usamos int() para forzar que no haya decimales
+        total_original = int(deudas_qs.aggregate(total=Sum('monto_total'))['total'] or 0)
+        total_pagado = int(Abono.objects.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0)
+        total_pendiente = int(sum(d.saldo_pendiente for d in deudas_qs))
+
+        extra_context = extra_context or {}
+        extra_context.update({
+            'total_deuda_original': total_original,
+            'total_pagado_deudas': total_pagado,
+            'pendiente_proveedores': total_pendiente,
+        })
+        
+        return super().changelist_view(request, extra_context=extra_context)
     
     def pago_actual(self, obj):
         pagados = obj.abonos.filter(pagado=True).count()
@@ -137,12 +191,14 @@ class DeudaAdmin(admin.ModelAdmin):
             if pagados >= total: return format_html('<span style="color: #15ff00; font-weight: bold;">Completado</span>')
             return format_html("Pago <b>{}</b> de <b>{}</b>", pagados, total)
         return "Pago Único"
+    pago_actual.short_description = "Esquema"
 
     def imprimir_ticket_boton(self, obj):
         ultimo_abono = obj.abonos.first() 
         if ultimo_abono:
             return format_html('<a class="button" href="/tienda/ticket/abono/{}/" target="_blank">🎟️ Ticket</a>', ultimo_abono.id)
         return "Sin abonos"
+    imprimir_ticket_boton.short_description = "Ticket"
 
     def avance_pago(self, obj):
         total = float(obj.monto_total)

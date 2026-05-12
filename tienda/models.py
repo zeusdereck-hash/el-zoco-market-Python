@@ -67,7 +67,7 @@ class MovimientoCaja(models.Model):
 # --- SISTEMA DE DEUDAS Y ABONOS ---
 
 class Deuda(models.Model):
-    persona = models.CharField(max_length=200, verbose_name="Proveedor / Acreedor")
+    persona = models.CharField(max_length=200, verbose_name="Proveedor")
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_inicio = models.DateField(default=timezone.now, verbose_name="Fecha de Inicio")
     yo_debo = models.BooleanField(default=True, verbose_name="¿Es deuda mía?")
@@ -80,7 +80,7 @@ class Deuda(models.Model):
         decimal_places=2, 
         editable=False, 
         default=0, 
-        verbose_name="Monto por cada pago"
+        verbose_name="Monto x c/pago"
     )
 
     @property
