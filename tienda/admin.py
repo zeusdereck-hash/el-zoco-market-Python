@@ -7,6 +7,7 @@ from django.db.models import Sum
 from django.utils import timezone 
 from .models import Categoria, Producto, MovimientoCaja, Deuda, Abono, Venta 
 from django.utils.html import format_html
+from .models import Deuda
 
 # --- CONFIGURACIÓN DEL SITIO ADMINISTRATIVO PERSONALIZADO ---
 
@@ -164,6 +165,8 @@ class DeudaAdmin(admin.ModelAdmin):
         ('Programación de Pagos', {'fields': ('cantidad_pagos', 'periodicidad_dias','monto_por_pago')}),
     )
     list_display = ('persona', 'monto_total', 'saldo_pendiente', 'pago_actual', 'monto_por_pago', 'avance_pago', 'imprimir_ticket_boton')
+    search_fields = ('persona', 'monto_total')
+    list_filter = ('persona', 'monto_total')
     inlines = [AbonoInline]
 
     def changelist_view(self, request, extra_context=None):
