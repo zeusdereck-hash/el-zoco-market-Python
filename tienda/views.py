@@ -97,40 +97,11 @@ def buscar_producto_codigo(request, codigo):
     })
 
 def pos_view(request):
-    # Esta vista carga tu nuevo template estilo App
-    return render(request, 'tienda/pos.html')
-
-def buscar_producto(request, codigo):
-    # Busca por el campo 'codigo' que tienes en tu ProductoAdmin
-    producto = get_object_or_404(Producto, codigo=codigo, disponible=True)
-    data = {
-        'id': producto.id,
-        'nombre': producto.nombre,
-        'precio': float(producto.precio),
-        'codigo': producto.codigo,
-        'imagen': producto.imagen.url if producto.imagen else '/static/img/default.png'
+    productos = Producto.objects.filter(stock__gt=0)[:20] # Solo productos con stock
+    proximo_folio = Venta.objects.all().count() + 1
+    
+    context = {
+        'productos': productos,
+        'folio': f"{proximo_folio:05d}",
     }
-    return JsonResponse(data)
-
-@csrf_exempt # Solo para pruebas locales, en producción usa el token CSRF
-def guardar_venta(request):
-    if request.method == 'POST':
-        datos = json.loads(request.body)
-        # 1. Crear la Venta
-        nueva_venta = Venta.objects.create(
-            total=datos['total'],
-            metodo_pago=datos['metodo_pago']
-        )
-        # 2. Crear los detalles y descontar stock
-        for item in datos['productos']:
-            prod = Producto.objects.get(id=item['id'])
-            VentaDetalle.objects.create(
-                venta=nueva_venta,
-                producto=prod,
-                cantidad=item['cantidad'],
-                precio_unitario=item['precio']
-            )
-            prod.stock -= item['cantidad']
-            prod.save()
-            
-        return JsonResponse({'status': 'ok', 'venta_id': nueva_venta.id})   
+    return render(request, 'tienda/pos.html', context)

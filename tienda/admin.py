@@ -8,6 +8,8 @@ from django.utils import timezone
 from .models import Categoria, Producto, MovimientoCaja, Deuda, Abono, Venta 
 from django.utils.html import format_html
 from .models import Deuda
+from django.urls import path
+from django.shortcuts import redirect
 
 # --- CONFIGURACIÓN DEL SITIO ADMINISTRATIVO PERSONALIZADO ---
 
@@ -219,8 +221,29 @@ class MovimientoCajaAdmin(admin.ModelAdmin):
 
 @admin.register(Venta, site=admin_site)
 class VentaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'fecha', 'total', 'metodo_pago')
+    # Desactivamos edición para que sea solo "Sección de Información"
+    list_display = ('ticket_preview', 'total_destacado', 'fecha_formateada')
+    readonly_fields = ('folio', 'fecha', 'total', 'forma_pago', 'cliente')
+    
+    def ticket_preview(self, obj):
+        # Genera una mini-tarjeta visual en el listado
+        return format_html(
+            '<div style="background: #fff; border: 1px solid #ddd; padding: 10px; border-left: 5px solid #000; width: 250px;">'
+            '<span style="font-size: 10px; color: #888;">FOLIO: {}</span><br>'
+            '<strong style="font-size: 14px;">{}</strong><br>'
+            '<small>Pago: {}</small>'
+            '</div>',
+            obj.folio, obj.cliente.upper(), obj.forma_pago
+        )
+    ticket_preview.short_description = "Información del Ticket"
 
+    def total_destacado(self, obj):
+        return format_html('<span style="font-size: 18px; font-weight: bold;">${:,.0f}</span>', obj.total)
+    total_destacado.short_description = "Total"
+
+    def fecha_formateada(self, obj):
+        return obj.fecha.strftime("%d/%m/%Y %H:%M")
 # Registrar Autenticación al final del archivo pero aparecerán primero por la lógica de get_app_list
 admin_site.register(User)
 admin_site.register(Group)
+admin_site.site_header = "El Zoco"

@@ -126,15 +126,27 @@ JAZZMIN_SETTINGS = {
     "show_ui_builder": False,      
     "related_modal_active": True,  
 
+    # --- NUEVA SECCIÓN: LINKS PERSONALIZADOS ---
+    "custom_links": {
+        "tienda": [ # Esto hace que aparezca dentro de la sección "Tienda"
+            {
+                "name": "Punto de Venta (POS)", 
+                "url": "pos", # El nombre de la URL en tu urls.py
+                "icon": "fas fa-cash-register",
+                "permissions": ["tienda.view_venta"]
+            },
+        ],
+    },
+
     # Iconos para las secciones (Font Awesome 5)
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "tienda.Producto": "fas fa-box-open",
         "tienda.Categoria": "fas fa-tags",
-        "tienda.Deuda": "fas fa-hand-holding-usd",
-        "tienda.MovimientoCaja": "fas fa-cash-register",
-        "tienda.Abono": "fas fa-receipt",
+        "tienda.Venta": "fas fa-ticket-alt",  # Icono para Historial de Tickets
+        "finanzas.Deuda": "fas fa-hand-holding-usd",
+        "finanzas.MovimientoCaja": "fas fa-wallet",
     },
 
     # Orden de las secciones

@@ -1,0 +1,93 @@
+{% extends "admin/base_site.html" %} {% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;">
+    
+    <div style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="buscar-producto" placeholder="🔍 Escanear código o buscar nombre..." 
+                   style="width: 100%; padding: 15px; border-radius: 30px; border: 2px solid #FFC000; font-size: 18px;">
+        </div>
+
+        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+    {% for p in productos %}
+    <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre}}', '{{p.precio}}')"
+            class="producto-item" 
+            data-nombre="{{ p.nombre }}" 
+            data-categoria="{{ p.categoria.nombre|slugify }}"
+            style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;">
+        
+        <div style="height: 100px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
+            {% if p.imagen %}
+                <img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+            {% else %}
+                <span style="font-size: 30px;">📦</span>
+            {% endif %}
+        </div>
+
+        <strong style="display: block; font-size: 14px; height: 35px; overflow: hidden; text-align: center;">
+            {{ p.nombre }}
+        </strong>
+        
+        <span style="color: #28a745; font-weight: bold; font-size: 18px; display: block; text-align: center;">
+            ${{ p.precio }}
+        </span>
+    </button>
+    {% endfor %}
+</div>
+
+
+    <div style="background: #343a40; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column;">
+        <div style="text-align: center; border-bottom: 1px dashed #555; padding-bottom: 10px;">
+            <h2 style="margin: 0; color: #FFC000;">EL ZOCO</h2>
+            <small>Ticket Folio: {{ folio }}</small>
+        </div>
+
+        <div id="lista-carrito" style="flex-grow: 1; margin-top: 20px; overflow-y: auto;">
+            <p style="text-align: center; color: #888;">Carrito vacío</p>
+        </div>
+
+        <div style="background: #222; padding: 20px; border-radius: 10px; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 28px; font-weight: bold; margin-bottom: 15px;">
+                <span>TOTAL:</span>
+                <span id="total-monto" style="color: #FFC000;">$0</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button style="background: #6c757d; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold;">EFECTIVO</button>
+                <button style="background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold;">TRANSF.</button>
+            </div>
+
+            <button style="width: 100%; background: #28a745; color: white; border: none; padding: 20px; border-radius: 8px; font-size: 22px; font-weight: bold; margin-top: 15px; cursor: pointer;">
+                ✅ COBRAR
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let carrito = [];
+    let total = 0;
+
+    function agregarAlCarrito(id, nombre, precio) {
+        carrito.push({id, nombre, precio: parseInt(precio)});
+        renderCarrito();
+    }
+
+    function renderCarrito() {
+        const lista = document.getElementById('lista-carrito');
+        const totalTxt = document.getElementById('total-monto');
+        lista.innerHTML = '';
+        total = 0;
+
+        carrito.forEach(item => {
+            total += item.precio;
+            lista.innerHTML += `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 4px;">
+                    <span>1x ${item.nombre}</span>
+                    <span>$${item.precio}</span>
+                </div>
+            `;
+        });
+        totalTxt.innerText = `$${total}`;
+    }
+</script>
+{% endblock %}

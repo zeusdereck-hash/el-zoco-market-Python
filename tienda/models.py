@@ -4,6 +4,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.utils.html import format_html
+from django.contrib.auth.models import User
 
 # --- MODELOS DE LA TIENDA ---
 
@@ -143,35 +145,58 @@ class Abono(models.Model):
 
 # --- SISTEMA DE VENTAS ---
 
+def generar_folio():
+    # Buscamos el último objeto directamente en la base de datos
+    ultimo_ticket = Venta.objects.all().order_by('id').last()
+    if not ultimo_ticket:
+        return '00001'
+    nuevo_id = ultimo_ticket.id + 1
+    return f"{nuevo_id:05d}"
+
 class Venta(models.Model):
-    METODO_PAGO = [
+    # Folio automático
+    folio = models.CharField(
+        max_length=20, 
+        unique=True, 
+        default=generar_folio, 
+        verbose_name="Folio Ticket"
+    )
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha/Hora")
+    cliente = models.CharField(max_length=100, default="Cliente De Prueba")
+    
+    # Opciones para Forma de Pago (basado en tu imagen)
+    FORMA_PAGO_CHOICES = [
         ('EFECTIVO', 'Efectivo'),
-        ('TRANSFERENCIA', 'Transferencia/Tarjeta'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('TARJETA', 'Tarjeta'),
     ]
-    fecha = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO, default='EFECTIVO')
-    notas = models.TextField(blank=True, null=True)
+    forma_pago = models.CharField(
+        max_length=50, 
+        choices=FORMA_PAGO_CHOICES, 
+        default="TRANSFERENCIA"
+    )
+    
+    total = models.DecimalField(max_digits=10, decimal_places=0, default=0)
+    vendedor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    qr_data = models.TextField(blank=True, null=True) # Para el QR del ticket
 
     class Meta:
-        verbose_name = "Venta"
-        verbose_name_plural = "Ventas"
-        ordering = ['-fecha']
+        verbose_name = "Ticket de Venta"
+        verbose_name_plural = "Historial de Tickets (Cajas)"
 
     def __str__(self):
-        return f"Venta #{self.id} - {self.fecha.strftime('%d/%m/%Y')}"
+        return f"Ticket {self.folio} - {self.cliente}"
 
-class VentaDetalle(models.Model):
-    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
-    cantidad = models.PositiveIntegerField(default=1)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+class DetalleVenta(models.Model):
+    venta = models.ForeignKey(Venta, related_name='productos', on_delete=models.CASCADE)
+    producto = models.ForeignKey('Producto', on_delete=models.SET_NULL, null=True) # Relación al producto real
+    descripcion = models.CharField(max_length=255) # Copia del nombre al vender
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=0)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=0)
 
-    def save(self, *args, **kwargs):
-        self.subtotal = self.precio_unitario * self.cantidad
-        super().save(*args, **kwargs)
-
+    def __str__(self):
+        return f"{self.cantidad} x {self.descripcion}"
 # --- SEÑALES (Signals) ---
 # Esto automatiza el recálculo al crear o eliminar abonos
 
