@@ -1,47 +1,81 @@
 {% extends "admin/base_site.html" %} {% block content %}
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;">
+<style>
+    /* Inyección de estilos para categorías y responsividad móvil */
+    .btn-categoria {
+        background: #f8f9fa; border: 1px solid #ddd; padding: 8px 15px;
+        border-radius: 20px; white-space: nowrap; cursor: pointer; transition: 0.2s;
+    }
+    .btn-categoria.active { background: #FFC000; border-color: #FFC000; font-weight: bold; }
+
+    /* Ajuste para que encaje en Android sin romper el diseño de PC */
+    @media (max-width: 992px) {
+        .pos-container {
+            grid-template-columns: 1fr !important; /* Una sola columna en móvil */
+            height: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .ticket-panel {
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+    }
+</style>
+
+<div class="pos-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;">
     
-    <div style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="grid-panel" style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <div style="margin-bottom: 20px;">
             <input type="text" id="buscar-producto" placeholder="🔍 Escanear código o buscar nombre..." 
                    style="width: 100%; padding: 15px; border-radius: 30px; border: 2px solid #FFC000; font-size: 18px;">
         </div>
 
-        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
-    {% for p in productos %}
-    <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre}}', '{{p.precio}}')"
-            class="producto-item" 
-            data-nombre="{{ p.nombre }}" 
-            data-categoria="{{ p.categoria.nombre|slugify }}"
-            style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;">
-        
-        <div style="height: 100px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
-            {% if p.imagen %}
-                <img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-            {% else %}
-                <span style="font-size: 30px;">📦</span>
-            {% endif %}
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee;">
+            <button onclick="filtrarCategoria('todas')" class="btn-categoria active">Todas</button>
+            {% for cat in categorias %}
+            <button onclick="filtrarCategoria('{{ cat.nombre|slugify }}')" class="btn-categoria">
+                {{ cat.nombre }}
+            </button>
+            {% endfor %}
         </div>
 
-        <strong style="display: block; font-size: 14px; height: 35px; overflow: hidden; text-align: center;">
-            {{ p.nombre }}
-        </strong>
-        
-        <span style="color: #28a745; font-weight: bold; font-size: 18px; display: block; text-align: center;">
-            ${{ p.precio }}
-        </span>
-    </button>
-    {% endfor %}
-</div>
+        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+            {% for p in productos %}
+            <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre}}', '{{p.precio}}')"
+                    class="producto-item" 
+                    data-nombre="{{ p.nombre }}" 
+                    data-categoria="{{ p.categoria.nombre|slugify }}"
+                    style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;">
+                
+                <div style="height: 100px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
+                    {% if p.imagen %}
+                        <img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    {% else %}
+                        <span style="font-size: 30px;">📦</span>
+                    {% endif %}
+                </div>
 
+                <strong style="display: block; font-size: 14px; height: 35px; overflow: hidden; text-align: center;">
+                    {{ p.nombre }}
+                </strong>
+                
+                <span style="color: #28a745; font-weight: bold; font-size: 18px; display: block; text-align: center;">
+                    ${{ p.precio }}
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
 
-    <div style="background: #343a40; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column;">
+    <div class="ticket-panel" style="background: #343a40; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column;">
         <div style="text-align: center; border-bottom: 1px dashed #555; padding-bottom: 10px;">
             <h2 style="margin: 0; color: #FFC000;">EL ZOCO</h2>
             <small>Ticket Folio: {{ folio }}</small>
         </div>
 
-        <div id="lista-carrito" style="flex-grow: 1; margin-top: 20px; overflow-y: auto;">
+        <div id="lista-carrito" style="flex-grow: 1; margin-top: 20px; overflow-y: auto; min-height: 100px;">
             <p style="text-align: center; color: #888;">Carrito vacío</p>
         </div>
 
@@ -68,7 +102,8 @@
     let total = 0;
 
     function agregarAlCarrito(id, nombre, precio) {
-        carrito.push({id, nombre, precio: parseInt(precio)});
+        // Usamos parseFloat para manejar decimales si fuera necesario en el futuro
+        carrito.push({id, nombre, precio: parseFloat(precio)});
         renderCarrito();
     }
 
@@ -88,6 +123,25 @@
             `;
         });
         totalTxt.innerText = `$${total}`;
+    }
+
+    // Lógica de búsqueda y filtrado inyectada
+    document.getElementById('buscar-producto').addEventListener('input', function(e) {
+        let busqueda = e.target.value.toLowerCase();
+        document.querySelectorAll('.producto-item').forEach(prod => {
+            let nombre = prod.dataset.nombre.toLowerCase();
+            prod.style.display = nombre.includes(busqueda) ? 'block' : 'none';
+        });
+    });
+
+    function filtrarCategoria(slug) {
+        document.querySelectorAll('.producto-item').forEach(prod => {
+            prod.style.display = (slug === 'todas' || prod.dataset.categoria === slug) ? 'block' : 'none';
+        });
+        // Actualizar botones de categoría
+        document.querySelectorAll('.btn-categoria').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.toLowerCase().includes(slug) || (slug === 'todas' && btn.innerText === 'Todas'));
+        });
     }
 </script>
 {% endblock %}
