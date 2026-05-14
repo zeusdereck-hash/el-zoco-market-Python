@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import Producto
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Sum
-from .models import Producto, Categoria, Venta, Deuda, Abono
+from django.db import transaction
+from .models import Producto, Categoria, Venta, DetalleVenta, Deuda, Abono
 
 def index(request):
     context = {
@@ -18,52 +18,43 @@ def index(request):
 def contacto(request):
     return render(request, 'tienda/contacto.html')
 
+# --- LÓGICA DE TICKETS Y COMPROBANTES (Formato Imagen WhatsApp) ---
+
 def generar_ticket(request, tipo, id):
     items = []
-    total = 0
-    folio = id
-    
     if tipo == 'venta':
         obj = get_object_or_404(Venta, id=id)
-        tipo_comprobante = "COMPROBANTE DE VENTA"
-        total = obj.total
-        for det in obj.detalles.all():
+        # Extraemos los productos asociados a la venta
+        detalles = obj.productos.all() 
+        for det in detalles:
             items.append({
-                'cantidad': det.cantidad,
-                'descripcion': det.producto.nombre,
-                'subtotal': det.subtotal
+                'cantidad': int(det.cantidad),
+                'descripcion': det.descripcion,
+                'precio': int(det.precio_unitario),
+                'subtotal': int(det.subtotal)
             })
             
-    elif tipo == 'abono':
-        obj = get_object_or_404(Abono, id=id)
-        tipo_comprobante = "RECIBO DE ABONO"
-        total = obj.monto
-        items.append({
-            'cantidad': 1,
-            'descripcion': f"Abono a cuenta de {obj.deuda.persona}",
-            'subtotal': obj.monto
-        })
-
-    context = {
-        'tipo_comprobante': tipo_comprobante,
-        'fecha': obj.fecha,
-        'folio': folio,
-        'items': items,
-        'total': total,
-    }
-    return render(request, 'tienda/ticket_58mm.html', context)
+        context = {
+            'tipo_comprobante': "TICKET DE VENTA",
+            'folio': obj.folio,
+            'fecha': obj.fecha,
+            'cliente': obj.cliente,
+            'items': items,
+            'total': int(obj.total),
+            'forma_pago': obj.forma_pago,
+        }
+        return render(request, 'tienda/ticket_pos.html', context)
+    
+    return redirect('admin:index')
 
 def ticket_abono(request, abono_id):
-    from django.db.models import Sum
     abono_actual = get_object_or_404(Abono, id=abono_id)
     deuda = abono_actual.deuda
-    
-    # Historial para calcular la posición
-    historial_abonos = deuda.abonos.all().order_by('fecha')
-    lista_abonos = list(historial_abonos)
+    historial_abonos = Abono.objects.filter(deuda=deuda).order_by('fecha')
     
     try:
-        numero_pago_actual = lista_abonos.index(abono_actual) + 1
+        lista_ids = list(historial_abonos.values_list('id', flat=True))
+        numero_pago_actual = lista_ids.index(abono_actual.id) + 1
     except ValueError:
         numero_pago_actual = 1
 
@@ -79,13 +70,34 @@ def ticket_abono(request, abono_id):
         'total_pagado': total_pagado,
         'saldo_restante': deuda.saldo_pendiente,
         'usuario_atendio': request.user.get_full_name() or request.user.username,
-        
-        # Estas variables deben coincidir exactamente con el HTML
         'total_pagos': deuda.cantidad_pagos,      
         'periodicidad': deuda.periodicidad_dias,  
         'numero_pago': numero_pago_actual,        
     }
     return render(request, 'tienda/ticket_abono.html', context)
+
+# --- SISTEMA POS (POINT OF SALE) ---
+
+def pos_view(request):
+    productos = Producto.objects.filter(stock__gt=0)
+    categorias = Categoria.objects.all()
+    
+    ultimo_ticket = Venta.objects.last()
+    if ultimo_ticket:
+        try:
+            numero_folio = int(ultimo_ticket.folio.split('-')[-1]) + 1
+            proximo_folio = f"TK-{numero_folio:04d}"
+        except:
+            proximo_folio = "TK-0001"
+    else:
+        proximo_folio = "TK-0001"
+
+    context = {
+        'productos': productos,
+        'categorias': categorias,
+        'folio': proximo_folio,
+    }
+    return render(request, 'tienda/pos.html', context)
 
 def buscar_producto_codigo(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
@@ -96,12 +108,54 @@ def buscar_producto_codigo(request, codigo):
         'stock': producto.stock
     })
 
-def pos_view(request):
-    productos = Producto.objects.filter(stock__gt=0)[:20] # Solo productos con stock
-    proximo_folio = Venta.objects.all().count() + 1
-    
-    context = {
-        'productos': productos,
-        'folio': f"{proximo_folio:05d}",
-    }
-    return render(request, 'tienda/pos.html', context)
+@csrf_exempt
+def procesar_pago(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            carrito = data.get('carrito', [])
+            total = data.get('total', 0)
+            forma_pago = data.get('forma_pago', 'EFECTIVO')
+            cliente = data.get('cliente', 'Venta Mostrador')
+
+            if not carrito:
+                return JsonResponse({'status': 'error', 'message': 'El carrito está vacío'}, status=400)
+
+            with transaction.atomic():
+                # 1. Crear la Venta
+                nueva_venta = Venta.objects.create(
+                    total=total,
+                    forma_pago=forma_pago,
+                    cliente=cliente,
+                    vendedor=request.user if request.user.is_authenticated else None
+                )
+
+                # 2. Registrar detalles y descontar stock
+                for item in carrito:
+                    producto = Producto.objects.get(id=item['id'])
+                    
+                    if producto.stock < 1:
+                        raise Exception(f"Stock insuficiente para: {producto.nombre}")
+
+                    DetalleVenta.objects.create(
+                        venta=nueva_venta,
+                        producto=producto,
+                        descripcion=producto.nombre,
+                        cantidad=1,
+                        precio_unitario=item['precio'],
+                        subtotal=item['precio']
+                    )
+
+                    # Descuento de inventario
+                    producto.stock -= 1
+                    producto.save()
+
+                return JsonResponse({
+                    'status': 'ok',
+                    'venta_id': nueva_venta.id,
+                    'folio': nueva_venta.folio
+                })
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { width: 58mm; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: 0; padding: 2px; color: #000; }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .logo { width: 60mm; margin-left: -2mm; } /* Ajuste para que el logo ocupe el ancho */
+        .divider { border-top: 1px dashed #000; margin: 5px 0; }
+        table { width: 100%; font-size: 11px; border-collapse: collapse; }
+        .text-right { text-align: right; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body onload="window.print();">
+    <div class="center">
+        <img src="/static/img/estructura/ELZOCO.png" class="logo">
+        <div class="bold" style="font-size: 14px;">{{ tipo_comprobante }}</div>
+    </div>
+
+    <div class="divider"></div>
+    
+    <div style="font-size: 10px;">
+        <span class="bold">FOLIO:</span> {{ folio }}<br>
+        <span class="bold">FECHA:</span> {{ fecha|date:"d/m/Y H:i" }}<br>
+        <span class="bold">CLIENTE:</span> {{ cliente|upper }}
+    </div>
+
+    <div class="divider"></div>
+
+    <table>
+        <thead>
+            <tr class="bold">
+                <td style="width: 10%;">Cant</td>
+                <td style="width: 60%;">Desc</td>
+                <td style="width: 30%; text-align: right;">Total</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td class="text-right">${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <div style="display: flex; justify-content: space-between; font-size: 14px;" class="bold">
+        <span>TOTAL:</span>
+        <span>${{ total }}</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="center" style="font-size: 10px;">
+        METODO DE PAGO: {{ forma_pago }}<br><br>
+        ¡GRACIAS POR SU PREFERENCIA!
+    </div>
+</body>
+</html>

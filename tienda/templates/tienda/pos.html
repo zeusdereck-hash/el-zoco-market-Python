@@ -1,97 +1,114 @@
-{% extends "admin/base_site.html" %} {% block content %}
+{% extends "admin/base_site.html" %} {% load static %} {% block content %}
 <style>
-    /* Inyección de estilos para categorías y responsividad móvil */
-    .btn-categoria {
-        background: #f8f9fa; border: 1px solid #ddd; padding: 8px 15px;
-        border-radius: 20px; white-space: nowrap; cursor: pointer; transition: 0.2s;
-    }
-    .btn-categoria.active { background: #FFC000; border-color: #FFC000; font-weight: bold; }
+    /* 1. Tipografía y Estilos de Categorías */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-    /* Ajuste para que encaje en Android sin romper el diseño de PC */
-    @media (max-width: 992px) {
-        .pos-container {
-            grid-template-columns: 1fr !important; /* Una sola columna en móvil */
-            height: auto !important;
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        .ticket-panel {
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
-        }
+    .btn-categoria {
+        background: #343a40; color: white; border: 1px solid #444; 
+        padding: 10px 20px; border-radius: 25px; cursor: pointer; 
+        transition: all 0.3s ease; font-size: 14px;
     }
+    .btn-categoria.active { 
+        background: #FFC000 !important; color: #000 !important; 
+        font-weight: bold; box-shadow: 0 4px 8px rgba(255, 192, 0, 0.4);
+    }
+
+    .pos-container {
+        display: grid; grid-template-columns: 1fr 320px; 
+        gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;
+    }
+
+    /* Estilos del Header del Ticket (Estilo Ecommerce) */
+    .ticket-header {
+        text-align: center;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #FFC000;
+        margin-bottom: 15px;
+    }
+    .ticket-logo {
+        width: 80px; /* Ajusta según el tamaño de tu logo */
+        height: auto;
+        margin-bottom: 5px;
+    }
+    .ticket-title {
+        font-family: 'Arial Black', Gadget, sans-serif; /* Simil a cabecera ecommerce */
+        font-size: 1.4em;
+        letter-spacing: 1px;
+        margin: 0;
+        color: #FFC000;
+        text-transform: uppercase;
+    }
+
+    /* Ajustes para Android / Móvil */
+    @media (max-width: 992px) {
+        .pos-container { grid-template-columns: 1fr !important; height: auto !important; display: flex !important; flex-direction: column !important; }
+        .ticket-panel { position: sticky; bottom: 0; z-index: 100; width: 100% !important; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); }
+    }
+
+    .metodo-pago-btn {
+        background: #495057; color: white; border: none; padding: 8px; 
+        border-radius: 5px; font-size: 11px; cursor: pointer; transition: 0.2s;
+    }
+    .metodo-pago-btn.active { background: #FFC000; color: black; font-weight: bold; }
 </style>
 
-<div class="pos-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;">
+<div class="pos-container">
     
-    <div class="grid-panel" style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="grid-panel" style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto;">
         <div style="margin-bottom: 20px;">
-            <input type="text" id="buscar-producto" placeholder="🔍 Escanear código o buscar nombre..." 
-                   style="width: 100%; padding: 15px; border-radius: 30px; border: 2px solid #FFC000; font-size: 18px;">
+            <input type="text" id="input-buscador" oninput="filtrarProductos()" placeholder="🔍 Buscar por nombre o escanear..." 
+                   style="width: 100%; padding: 15px; border-radius: 30px; border: 2px solid #FFC000; font-size: 18px; background: #1a1a1a; color: white;">
         </div>
 
         <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee;">
             <button onclick="filtrarCategoria('todas')" class="btn-categoria active">Todas</button>
             {% for cat in categorias %}
-            <button onclick="filtrarCategoria('{{ cat.nombre|slugify }}')" class="btn-categoria">
-                {{ cat.nombre }}
-            </button>
+            <button onclick="filtrarCategoria('{{ cat.nombre|slugify }}')" class="btn-categoria">{{ cat.nombre }}</button>
             {% endfor %}
         </div>
 
-        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">
             {% for p in productos %}
-            <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre}}', '{{p.precio}}')"
-                    class="producto-item" 
-                    data-nombre="{{ p.nombre }}" 
-                    data-categoria="{{ p.categoria.nombre|slugify }}"
-                    style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;">
-                
-                <div style="height: 100px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
-                    {% if p.imagen %}
-                        <img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-                    {% else %}
-                        <span style="font-size: 30px;">📦</span>
-                    {% endif %}
+            <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre|escapejs}}', '{{p.precio}}')"
+                    class="producto-item" data-nombre="{{ p.nombre|lower }}" data-categoria="{{ p.categoria.nombre|slugify }}"
+                    style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer;">
+                <div style="height: 80px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
+                    {% if p.imagen %}<img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    {% else %}<span style="font-size: 30px;">📦</span>{% endif %}
                 </div>
-
-                <strong style="display: block; font-size: 14px; height: 35px; overflow: hidden; text-align: center;">
-                    {{ p.nombre }}
-                </strong>
-                
-                <span style="color: #28a745; font-weight: bold; font-size: 18px; display: block; text-align: center;">
-                    ${{ p.precio }}
-                </span>
+                <strong style="display: block; font-size: 12px; height: 32px; overflow: hidden;">{{ p.nombre }}</strong>
+                <span style="color: #28a745; font-weight: bold;">${{ p.precio|floatformat:0 }}</span>
             </button>
             {% endfor %}
         </div>
     </div>
 
-    <div class="ticket-panel" style="background: #343a40; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column;">
-        <div style="text-align: center; border-bottom: 1px dashed #555; padding-bottom: 10px;">
-            <h2 style="margin: 0; color: #FFC000;">EL ZOCO</h2>
-            <small>Ticket Folio: {{ folio }}</small>
+    <div class="ticket-panel" style="background: #1a1a1a; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; border-left: 4px solid #FFC000;">
+        <div class="ticket-header">
+            <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="Logo" class="ticket-logo">
+            <h2 class="ticket-title">EL ZOCO</h2>
+            <small style="color: #888;">Folio: <span id="folio-display" style="color: #FFC000; font-weight: bold;">{{ folio }}</span></small>
         </div>
 
-        <div id="lista-carrito" style="flex-grow: 1; margin-top: 20px; overflow-y: auto; min-height: 100px;">
-            <p style="text-align: center; color: #888;">Carrito vacío</p>
+        <div id="lista-carrito" style="flex-grow: 1; margin-top: 10px; overflow-y: auto; min-height: 150px; font-size: 0.85em;">
+            <p style="text-align: center; color: #555;">Carrito vacío</p>
         </div>
 
-        <div style="background: #222; padding: 20px; border-radius: 10px; margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; font-size: 28px; font-weight: bold; margin-bottom: 15px;">
+        <div style="background: #222; padding: 15px; border-radius: 10px; border: 1px solid #333;">
+            <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
                 <span>TOTAL:</span>
                 <span id="total-monto" style="color: #FFC000;">$0</span>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button style="background: #6c757d; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold;">EFECTIVO</button>
-                <button style="background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold;">TRANSF.</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+                <button onclick="setMetodo('EFECTIVO')" class="metodo-pago-btn active" id="pago-efectivo">EFECTIVO</button>
+                <button onclick="setMetodo('TRANSFERENCIA')" class="metodo-pago-btn" id="pago-transf">TRANSF.</button>
+                <button onclick="setMetodo('MERCADO PAGO')" class="metodo-pago-btn" id="pago-mp">M. PAGO</button>
+                <button onclick="setMetodo('PAYPAL')" class="metodo-pago-btn" id="pago-paypal">PAYPAL</button>
             </div>
 
-            <button style="width: 100%; background: #28a745; color: white; border: none; padding: 20px; border-radius: 8px; font-size: 22px; font-weight: bold; margin-top: 15px; cursor: pointer;">
-                ✅ COBRAR
+            <button id="btn-cobrar" onclick="cobrar()" style="width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: 0.3s;">
+                CONFIRMAR PAGO
             </button>
         </div>
     </div>
@@ -100,48 +117,83 @@
 <script>
     let carrito = [];
     let total = 0;
+    let metodoPago = 'EFECTIVO';
+
+    function filtrarProductos() {
+        let bus = document.getElementById('input-buscador').value.toLowerCase().trim();
+        document.querySelectorAll('.producto-item').forEach(it => {
+            it.style.display = it.dataset.nombre.includes(bus) ? 'block' : 'none';
+        });
+    }
+
+    function filtrarCategoria(slug) {
+        document.querySelectorAll('.producto-item').forEach(p => {
+            p.style.display = (slug === 'todas' || p.dataset.categoria === slug) ? 'block' : 'none';
+        });
+        document.querySelectorAll('.btn-categoria').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.toLowerCase().includes(slug) || (slug === 'todas' && btn.innerText === 'Todas'));
+        });
+    }
+
+    function setMetodo(m) {
+        metodoPago = m;
+        document.querySelectorAll('.metodo-pago-btn').forEach(b => b.classList.remove('active'));
+        const ids = {'EFECTIVO': 'pago-efectivo', 'TRANSFERENCIA': 'pago-transf', 'MERCADO PAGO': 'pago-mp', 'PAYPAL': 'pago-paypal'};
+        document.getElementById(ids[m]).classList.add('active');
+    }
 
     function agregarAlCarrito(id, nombre, precio) {
-        // Usamos parseFloat para manejar decimales si fuera necesario en el futuro
         carrito.push({id, nombre, precio: parseFloat(precio)});
         renderCarrito();
     }
 
     function renderCarrito() {
         const lista = document.getElementById('lista-carrito');
-        const totalTxt = document.getElementById('total-monto');
         lista.innerHTML = '';
         total = 0;
-
-        carrito.forEach(item => {
-            total += item.precio;
-            lista.innerHTML += `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 4px;">
-                    <span>1x ${item.nombre}</span>
-                    <span>$${item.precio}</span>
-                </div>
-            `;
-        });
-        totalTxt.innerText = `$${total}`;
+        if (carrito.length === 0) {
+            lista.innerHTML = '<p style="text-align: center; color: #555;">Carrito vacío</p>';
+        } else {
+            carrito.forEach((item, index) => {
+                total += item.precio;
+                lista.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
+                        <span>${item.nombre}</span>
+                        <span>$${item.precio.toFixed(0)} <button onclick="eliminar(${index})" style="color:#ff4d4d; background:none; border:none; cursor:pointer;">✕</button></span>
+                    </div>`;
+            });
+        }
+        document.getElementById('total-monto').innerText = `$${total.toFixed(0)}`;
     }
 
-    // Lógica de búsqueda y filtrado inyectada
-    document.getElementById('buscar-producto').addEventListener('input', function(e) {
-        let busqueda = e.target.value.toLowerCase();
-        document.querySelectorAll('.producto-item').forEach(prod => {
-            let nombre = prod.dataset.nombre.toLowerCase();
-            prod.style.display = nombre.includes(busqueda) ? 'block' : 'none';
-        });
-    });
+    function eliminar(i) { carrito.splice(i, 1); renderCarrito(); }
 
-    function filtrarCategoria(slug) {
-        document.querySelectorAll('.producto-item').forEach(prod => {
-            prod.style.display = (slug === 'todas' || prod.dataset.categoria === slug) ? 'block' : 'none';
-        });
-        // Actualizar botones de categoría
-        document.querySelectorAll('.btn-categoria').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText.toLowerCase().includes(slug) || (slug === 'todas' && btn.innerText === 'Todas'));
-        });
+    async function cobrar() {
+        if (carrito.length === 0) return alert("⚠️ Selecciona productos primero.");
+        const btn = document.getElementById('btn-cobrar');
+        btn.disabled = true;
+        btn.innerText = "PROCESANDO...";
+
+        try {
+            const response = await fetch('/procesar-pago/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ carrito, total, forma_pago: metodoPago, cliente: "Venta Mostrador" })
+            });
+            const res = await response.json();
+            if (res.status === 'ok') {
+                alert("✅ Venta Registrada");
+                window.open(`/tienda/ticket/venta/${res.venta_id}/`, '_blank');
+                window.location.reload(); 
+            } else {
+                alert("❌ Error: " + res.message);
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR PAGO";
+            }
+        } catch (e) {
+            alert("❌ Error de red");
+            btn.disabled = false;
+        }
     }
 </script>
 {% endblock %}

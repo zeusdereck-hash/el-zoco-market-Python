@@ -238,7 +238,10 @@ class VentaAdmin(admin.ModelAdmin):
     ticket_preview.short_description = "Información del Ticket"
 
     def total_destacado(self, obj):
-        return format_html('<span style="font-size: 18px; font-weight: bold;">${:,.0f}</span>', obj.total)
+        # Primero formateamos el número como string, luego lo metemos al HTML
+        total_formateado = "{:,.0f}".format(obj.total)
+        return format_html('<span style="font-size: 18px; font-weight: bold;">${}</span>', total_formateado)
+    
     total_destacado.short_description = "Total"
 
     def fecha_formateada(self, obj):
