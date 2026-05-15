@@ -10,6 +10,8 @@ from django.utils.html import format_html
 from .models import Deuda
 from django.urls import path
 from django.shortcuts import redirect
+from .models import DetalleVenta
+from django.urls import reverse
 
 # --- CONFIGURACIÓN DEL SITIO ADMINISTRATIVO PERSONALIZADO ---
 
@@ -219,23 +221,27 @@ class MovimientoCajaAdmin(admin.ModelAdmin):
     def imprimir_ticket(self, obj):
         return format_html('<a class="button" href="/tienda/ticket/venta/{}/" target="_blank">🎟️ Ticket</a>', obj.id)
 
+class DetalleVentaInline(admin.TabularInline):
+    model = DetalleVenta
+    extra = 0
+    readonly_fields = ('producto', 'descripcion', 'cantidad', 'precio_unitario', 'subtotal')
+    can_delete = False
 @admin.register(Venta, site=admin_site)
 class VentaAdmin(admin.ModelAdmin):
-    # Desactivamos edición para que sea solo "Sección de Información"
-    list_display = ('ticket_preview', 'total_destacado', 'fecha_formateada')
-    readonly_fields = ('folio', 'fecha', 'total', 'forma_pago', 'cliente')
+    list_display = ('folio', 'vendedor', 'total_destacado', 'forma_pago', 'fecha', 'reimprimir_ticket')
+    readonly_fields = ('folio', 'fecha', 'total', 'forma_pago', 'cliente', 'vendedor')
+    inlines = [DetalleVentaInline] # Esto muestra el desglose de productos abajo del ticket
     
-    def ticket_preview(self, obj):
-        # Genera una mini-tarjeta visual en el listado
+    def reimprimir_ticket(self, obj):
+        # Genera un botón que abre el ticket en una pestaña nueva
+        url = reverse('ticket_venta', args=[obj.id])
         return format_html(
-            '<div style="background: #fff; border: 1px solid #ddd; padding: 10px; border-left: 5px solid #000; width: 250px;">'
-            '<span style="font-size: 10px; color: #888;">FOLIO: {}</span><br>'
-            '<strong style="font-size: 14px;">{}</strong><br>'
-            '<small>Pago: {}</small>'
-            '</div>',
-            obj.folio, obj.cliente.upper(), obj.forma_pago
+            '<a class="button" href="{}" target="_blank" style="background-color: #444; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none;">'
+            ' <i class="fas fa-print"></i> Reimprimir'
+            '</a>',
+            url
         )
-    ticket_preview.short_description = "Información del Ticket"
+    reimprimir_ticket.short_description = "Acción"
 
     def total_destacado(self, obj):
         # Primero formateamos el número como string, luego lo metemos al HTML

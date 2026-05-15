@@ -143,42 +143,52 @@ class Abono(models.Model):
         verbose_name_plural = "Abonos"
         ordering = ['fecha']
 
-# --- SISTEMA DE VENTAS ---
+import datetime
 
+# 1. Definimos la función con el nombre exacto
 def generar_folio():
     # Buscamos el último objeto directamente en la base de datos
+    # Nota: Usamos 'tienda.Venta' o simplemente Venta si ya está definida
+    from .models import Venta 
     ultimo_ticket = Venta.objects.all().order_by('id').last()
+    fecha_hoy = datetime.datetime.now().strftime("%Y%m%d")
+    
     if not ultimo_ticket:
-        return '00001'
+        return f"ZOCO-{fecha_hoy}-00001"
+    
     nuevo_id = ultimo_ticket.id + 1
-    return f"{nuevo_id:05d}"
+    return f"ZOCO-{fecha_hoy}-{nuevo_id:05d}"
 
 class Venta(models.Model):
-    # Folio automático
+    # 2. Aquí estaba el error: decía 'generar_folio_zoco' pero la función se llama 'generar_folio'
     folio = models.CharField(
-        max_length=20, 
+        max_length=30, 
         unique=True, 
-        default=generar_folio, 
-        verbose_name="Folio Ticket"
+        default=generar_folio, # Sin paréntesis y con el nombre correcto
+        verbose_name="Folio Ticket",
+        editable=False
     )
-    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha/Hora")
-    cliente = models.CharField(max_length=100, default="Cliente De Prueba")
     
-    # Opciones para Forma de Pago (basado en tu imagen)
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha/Hora")
+    cliente = models.CharField(max_length=100, default="Venta Mostrador")
+    
     FORMA_PAGO_CHOICES = [
         ('EFECTIVO', 'Efectivo'),
         ('TRANSFERENCIA', 'Transferencia'),
+        ('MERCADO PAGO', 'Mercado Pago'),
+        ('PAYPAL', 'PayPal'),
         ('TARJETA', 'Tarjeta'),
     ]
+    
     forma_pago = models.CharField(
         max_length=50, 
         choices=FORMA_PAGO_CHOICES, 
-        default="TRANSFERENCIA"
+        default="EFECTIVO"
     )
     
     total = models.DecimalField(max_digits=10, decimal_places=0, default=0)
     vendedor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    qr_data = models.TextField(blank=True, null=True) # Para el QR del ticket
+    qr_data = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Ticket de Venta"
@@ -186,7 +196,6 @@ class Venta(models.Model):
 
     def __str__(self):
         return f"Ticket {self.folio} - {self.cliente}"
-
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, related_name='productos', on_delete=models.CASCADE)
     producto = models.ForeignKey('Producto', on_delete=models.SET_NULL, null=True) # Relación al producto real

@@ -3,28 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { width: 58mm; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: 0; padding: 2px; color: #000; }
+        @page { size: 58mm 200mm; margin: 0; }
+        body { 
+            width: 48mm; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 11px; 
+            margin: 0 auto; 
+            padding: 5px 0;
+            color: #000; 
+        }
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        .logo { width: 60mm; margin-left: -2mm; } /* Ajuste para que el logo ocupe el ancho */
+        .logo { width: 35mm; margin-bottom: 5px; }
         .divider { border-top: 1px dashed #000; margin: 5px 0; }
-        table { width: 100%; font-size: 11px; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; margin: 5px 0; }
         .text-right { text-align: right; }
-        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body onload="window.print();">
     <div class="center">
         <img src="/static/img/estructura/ELZOCO.png" class="logo">
-        <div class="bold" style="font-size: 14px;">{{ tipo_comprobante }}</div>
+        <div class="bold" style="font-size: 12px;">EL ZOCO INTEGRATED SERVICE</div>
+        <div style="font-size: 7px;">https://elzoco.pythonanywhere.com/contacto</div>
     </div>
 
     <div class="divider"></div>
     
-    <div style="font-size: 10px;">
-        <span class="bold">FOLIO:</span> {{ folio }}<br>
-        <span class="bold">FECHA:</span> {{ fecha|date:"d/m/Y H:i" }}<br>
-        <span class="bold">CLIENTE:</span> {{ cliente|upper }}
+    <div style="line-height: 1.2;">
+        <span class="bold">FOLIO:</span> {{ venta.folio }}<br>
+        <span class="bold">FECHA:</span> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
+        <span class="bold">PAGO:</span> {{ venta.forma_pago }}<br>
+        <span class="bold">ATENDIÓ:</span> {{ venta.vendedor.get_full_name|default:venta.vendedor.username|upper }}
     </div>
 
     <div class="divider"></div>
@@ -32,17 +41,17 @@
     <table>
         <thead>
             <tr class="bold">
-                <td style="width: 10%;">Cant</td>
-                <td style="width: 60%;">Desc</td>
-                <td style="width: 30%; text-align: right;">Total</td>
+                <td style="width: 15%;">CANT</td>
+                <td style="width: 55%;">DESC</td>
+                <td style="width: 30%; text-align: right;">SUBT</td>
             </tr>
         </thead>
         <tbody>
-            {% for item in items %}
+            {% for item in venta.productos.all %}
             <tr>
-                <td>{{ item.cantidad }}</td>
-                <td>{{ item.descripcion }}</td>
-                <td class="text-right">${{ item.subtotal }}</td>
+                <td>{{ item.cantidad|floatformat:0 }}</td>
+                <td>{{ item.descripcion|truncatechars:18 }}</td>
+                <td class="text-right">${{ item.subtotal|floatformat:0 }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -50,16 +59,17 @@
 
     <div class="divider"></div>
 
-    <div style="display: flex; justify-content: space-between; font-size: 14px;" class="bold">
+    <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
         <span>TOTAL:</span>
-        <span>${{ total }}</span>
+        <span>${{ venta.total|floatformat:0 }}</span>
     </div>
 
     <div class="divider"></div>
 
-    <div class="center" style="font-size: 10px;">
-        METODO DE PAGO: {{ forma_pago }}<br><br>
-        ¡GRACIAS POR SU PREFERENCIA!
+    <div class="center" style="font-size: 9px; margin-top: 10px;">
+        <p>*** GRACIAS POR SU COMPRA ***</p>
+        <p>Mantenga su ticket para cualquier aclaración.</p>
+        <p>El Zoco Siempre un Placer Servirle</p>
     </div>
 </body>
 </html>
