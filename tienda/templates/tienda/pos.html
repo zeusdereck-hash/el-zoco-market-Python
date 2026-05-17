@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     /* 1. Tipografía y Estilos de la Consola */
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f0f0; }
@@ -129,7 +130,7 @@
         </div>
 
         <div id="lista-productos-modal" style="max-height: 380px; overflow-y: auto; padding: 12px; background: #f1f3f5; display: flex; flex-direction: column; gap: 10px;">
-            </div>
+        </div>
     </div>
 </div>
 
@@ -203,6 +204,58 @@
     </div>
 </div>
 
+<div id="ticket-termico-render" style="position: absolute; left: -9999px; top: -9999px; width: 290px; background: #ffffff; color: #000000; padding: 14px; font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.3; box-sizing: border-box;">
+    
+    <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="Logo" style="width: 85px; height: auto; margin-bottom: 5px;">
+        <div style="font-size: 13px; font-weight: bold; font-family: 'Arial Black', Gadget, sans-serif;">El zoco intégrate services</div>
+        <div style="font-size: 10px; color: #222; margin-top: 2px;">
+            Oscar Marquez Cruz<br>
+            5580867149<br>
+            el.zoco.grup@gmail.com<br>
+            <span style="font-size: 9px; text-decoration: underline;">https://elzoco.pythonanywhere.com/</span>
+        </div>
+    </div>
+
+    <div style="border-top: 1px solid #000; padding-top: 4px; margin-bottom: 6px; font-size: 11px; text-align: left;">
+        <div><strong>Cliente</strong></div>
+        <div id="rt-cliente" style="border-bottom: 1px solid #888; padding-bottom: 2px; margin-bottom: 4px;">Venta Mostrador</div>
+        <div><strong>Folio:</strong> <span id="rt-folio">00000</span></div>
+        <div><strong>Fecha:</strong> <span id="rt-fecha">--/--/---- --:--:--</span></div>
+        <div><strong>Status:</strong> Pagado</div>
+        <div><strong>Forma Pago:</strong> <span id="rt-metodo">EFECTIVO</span></div>
+    </div>
+
+    <div style="border-top: 1px solid #000; padding-top: 4px;">
+        <div style="font-size: 10px; font-weight: bold; display: flex; justify-content: space-between;">
+            <span>Descripción</span>
+        </div>
+        <div style="font-size: 10px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 4px;">
+            <span style="width: 25%; display: inline-block;">Cantidad</span>
+            <span style="width: 45%; display: inline-block; text-align: center;">Precio</span>
+            <span style="width: 30%; display: inline-block; text-align: right;">Subtotal</span>
+        </div>
+
+        <div id="rt-articulos" style="display: flex; flex-direction: column; gap: 5px;">
+        </div>
+    </div>
+
+    <div style="border-top: 1px solid #000; margin-top: 8px; padding-top: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; padding: 2px 0;">
+            <span style="width: 50%; text-align: right; padding-right: 20px;">Total</span>
+            <span id="rt-total" style="width: 50%; text-align: right;">$0.00</span>
+        </div>
+    </div>
+
+    <div style="border-top: 2px solid #000; margin-top: 10px; padding-top: 12px; text-align: center;">
+        <div style="display: inline-block; padding: 5px; border: 1px solid #000; margin-bottom: 4px;">
+            <div style="width: 65px; height: 65px; background: #000; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: bold;">QR CODE</div>
+        </div>
+        <div style="font-size: 8px; color: #555; margin-bottom: 10px;">Identificador Venta</div>
+        <div style="font-size: 10px; font-style: italic; font-weight: 500;">Siempre un placer poder servirle</div>
+    </div>
+</div>
+
 <script>
     let carrito = [];
     let total = 0;
@@ -273,9 +326,6 @@
 
     function eliminar(i) { carrito.splice(i, 1); renderCarrito(); }
 
-    /* =========================================================================
-       MANEJO Y FILTRADO DEL CATÁLOGO (MODAL F7) CORREGIDO
-       ========================================================================= */
     function abrirModalBusqueda() {
         const modal = document.getElementById('modal-busqueda-prod');
         if (modal) {
@@ -297,7 +347,6 @@
     function filtrarCategoriaModal(slug) {
         categoriaActivaModal = slug;
         document.querySelectorAll('.cat-modal-item').forEach(el => {
-            // Mapeo visual de la categoría activa en la barra superior de la modal
             if (el.getAttribute('onclick').includes(slug)) {
                 el.style.background = '#7B2CBF'; el.style.color = 'white';
             } else {
@@ -315,7 +364,6 @@
         let inputEl = document.getElementById('input-filtrar-modal');
         let busqueda = inputEl ? inputEl.value.toLowerCase().trim() : '';
         
-        // CORRECCIÓN: Lee de forma 100% segura los datasets estables generados por Django
         document.querySelectorAll('#grid-productos .producto-item').forEach(p => {
             const idProd = p.dataset.id;
             const nombre = p.dataset.nombre || '';
@@ -351,9 +399,6 @@
         });
     }
 
-    /* =========================================================================
-       MODALES TRANSACCIONALES (COBRO, RESUMEN Y CONFIGURACIÓN)
-       ========================================================================= */
     function abrirModalCobro() {
         if (carrito.length === 0) return alert("⚠️ Selecciona productos primero.");
         
@@ -413,27 +458,81 @@
                 })
             });
             const res = await response.json();
+            
             if (res.status === 'ok') {
-                document.getElementById('exito-total-txt').innerText = "$" + (total - descuento).toFixed(0);
+                const totalFinal = total - descuento;
+                
+                // Abrimos la modal inmediatamente para UX rápida
+                document.getElementById('exito-total-txt').innerText = "$" + totalFinal.toFixed(0);
                 document.getElementById('modal-exito-venta').style.display = 'block';
                 
                 const urlLocalTicket = `/tienda/ticket/venta/${res.venta_id}/`;
                 const urlAbsolutaTicket = window.location.origin + urlLocalTicket;
 
-                document.getElementById('btn-ver-ticket').onclick = () => window.open(urlLocalTicket, '_blank');
-                document.getElementById('btn-imprimir-bt').onclick = () => window.open(urlLocalTicket, '_blank');
+                // 1. Inyección de metadatos con el formato exacto de tu comprobante
+                document.getElementById('rt-cliente').innerText = cliente;
+                const folioFormateado = String(res.venta_id).padStart(5, '0');
+                document.getElementById('rt-folio').innerText = folioFormateado;
+                
+                // Captura de fecha y hora local con formato limpio
+                document.getElementById('rt-fecha').innerText = fechaOpcional ? new Date(fechaOpcional).toLocaleString() : new Date().toLocaleString();
+                document.getElementById('rt-total').innerText = "$" + totalFinal.toFixed(2);
+                document.getElementById('rt-metodo').innerText = metodoPago;
+                
+                // 2. Inyección estructurada de la tabla de artículos
+                const contenedorArticulos = document.getElementById('rt-articulos');
+                contenedorArticulos.innerHTML = '';
+                
+                carrito.forEach(item => {
+                    const sub = item.precio * item.cantidad;
+                    
+                    // Estructura idéntica a tu formato: Fila 1 para la descripción completa, Fila 2 para las columnas numéricas con spans fijos
+                    contenedorArticulos.innerHTML += `
+                        <div style="display: flex; flex-direction: column; width: 100%; font-size: 10.5px; color: #000; font-family: Arial, sans-serif;">
+                            <div style="text-transform: uppercase; font-weight: bold; width: 100%; word-wrap: break-word; text-align: left;">
+                                ${item.nombre}
+                            </div>
+                            <div style="width: 100%; margin-top: 1px; margin-bottom: 3px;">
+                                <span style="width: 25%; display: inline-block; text-align: left;">${item.cantidad.toFixed(2)}</span>
+                                <span style="width: 45%; display: inline-block; text-align: center;">${item.precio.toFixed(2)}</span>
+                                <span style="width: 30%; display: inline-block; text-align: right; font-weight: bold;">${sub.toFixed(2)}</span>
+                            </div>
+                        </div>`;
+                });
 
+                // 3. Renderizado asíncrono html2canvas (con scale: 2 para máxima resolución de impresión)
+                setTimeout(() => {
+                    const elementoTicket = document.getElementById('ticket-termico-render');
+                    
+                    html2canvas(elementoTicket, { background: '#ffffff', scale: 2 }).then(canvas => {
+                        const imagenJpegDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        
+                        // Asignación de la foto JPEG pura a los disparadores de botones
+                        document.getElementById('btn-ver-ticket').onclick = () => {
+                            const nuevaVentana = window.open();
+                            nuevaVentana.document.write(`<body style="margin:0; background:#f0f0f0; display:flex; justify-content:center;"><img src="${imagenJpegDataUrl}" style="max-width:100%; height:auto; box-shadow:0 4px 10px rgba(0,0,0,0.2); margin-top:20px;" alt="Ticket El Zoco"></body>`);
+                        };
+
+                        document.getElementById('btn-imprimir-bt').onclick = () => {
+                            const ventanaImpresion = window.open('', '_blank');
+                            ventanaImpresion.document.write(`<html><body onload="window.print();window.close()"><img src="${imagenJpegDataUrl}" style="width:100%;"></body></html>`);
+                            ventanaImpresion.document.close();
+                        };
+                    }).catch(err => {
+                        console.error("Fallo al generar imagen del ticket, usando fallback:", err);
+                        document.getElementById('btn-ver-ticket').onclick = () => window.open(urlLocalTicket, '_blank');
+                        document.getElementById('btn-imprimir-bt').onclick = () => window.open(urlLocalTicket, '_blank');
+                    });
+                }, 250);
+
+                // Configuración de botones de redes sociales externos
                 document.querySelector('[title="Compartir"]').onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(urlAbsolutaTicket);
-                        alert('🔗 ¡Enlace del ticket copiado!');
-                    } catch (err) {
-                        alert('Enlace: ' + urlAbsolutaTicket);
-                    }
+                    try { await navigator.clipboard.writeText(urlAbsolutaTicket); alert('🔗 Enlace copiado al portapapeles.'); } 
+                    catch (err) { alert('Enlace: ' + urlAbsolutaTicket); }
                 };
 
                 document.querySelector('[title="WhatsApp"]').onclick = () => {
-                    const msg = `¡Hola! Tu ticket de compra en *EL ZOCO* por un total de *$${(total - descuento).toFixed(0)}* está listo: ${urlAbsolutaTicket}`;
+                    const msg = `¡Hola! Tu ticket de compra en *EL ZOCO* por *$${totalFinal.toFixed(0)}* está listo: ${urlAbsolutaTicket}`;
                     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
                 };
 
@@ -443,7 +542,7 @@
                 btn.innerText = "CONFIRMAR PAGO";
             }
         } catch (e) {
-            alert("❌ Error de red al comunicarse con el servidor.");
+            alert("❌ Error de comunicación de red con el servidor.");
             btn.disabled = false;
             btn.innerText = "CONFIRMAR PAGO";
         }
