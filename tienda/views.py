@@ -135,19 +135,28 @@ def procesar_pago(request):
 
                 for item in carrito:
                     producto = Producto.objects.get(id=item['id'])
-                    if producto.stock < 1:
-                        raise Exception(f"Stock insuficiente para: {producto.nombre}")
+                    
+                    # CORRECCIÓN: Extraer dinámicamente la cantidad agrupada del frontend (con valor por defecto 1)
+                    cantidad_comprada = int(item.get('cantidad', 1))
+                    
+                    if producto.stock < cantidad_comprada:
+                        raise Exception(f"Stock insuficiente para: {producto.nombre}. Disponible: {producto.stock}")
+
+                    # Calcular el subtotal real multiplicando precio unitario por cantidad agrupada
+                    precio_unitario = float(item['precio'])
+                    subtotal_renglon = precio_unitario * cantidad_comprada
 
                     DetalleVenta.objects.create(
                         venta=nueva_venta,
                         producto=producto,
                         descripcion=producto.nombre,
-                        cantidad=1,
-                        precio_unitario=item['precio'],
-                        subtotal=item['precio']
+                        cantidad=cantidad_comprada,       # <-- CORREGIDO: Guarda la cantidad real
+                        precio_unitario=precio_unitario,
+                        subtotal=subtotal_renglon         # <-- CORREGIDO: Guarda el subtotal real
                     )
 
-                    producto.stock -= 1
+                    # Descontar el total de piezas vendidas del inventario
+                    producto.stock -= cantidad_comprada
                     producto.save()
 
                 return JsonResponse({

@@ -16,7 +16,7 @@
         box-sizing: border-box;
     }
 
-    /* Contenedor Único Estilo Consola Compacta - Corregido el alto dinámico */
+    /* Contenedor Único Estilo Consola Compacta */
     .ticket-panel {
         background: #1a1a1a; 
         color: white; 
@@ -24,9 +24,9 @@
         padding: 25px; 
         display: flex; 
         flex-direction: column; 
-        border-left: 4px solid #FFC000;
+        border-top: 4px solid #FFC000;
         width: 100%;
-        max-width: 450px;
+        max-width: 680px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         height: auto;
         box-sizing: border-box;
@@ -34,13 +34,15 @@
 
     /* Estilos del Header del Ticket */
     .ticket-header {
-        text-align: center;
-        padding-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 10px;
         border-bottom: 2px solid #FFC000;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
     }
     .ticket-logo {
-        width: 80px; 
+        width: 45px; 
         height: auto;
         margin-bottom: 5px;
     }
@@ -62,14 +64,19 @@
 
 <div id="grid-productos" style="display:none;">
     {% for p in productos %}
-    <div class="producto-item" data-id="{{ p.id }}" data-codigo="{{ p.codigo|default:'7501018311315' }}" data-stock="{{ p.stock }}" data-nombre="{{ p.nombre|lower }}" data-precio="{{ p.precio }}" data-categoria="{{ p.categoria.nombre|slugify }}">
-        <strong>{{ p.nombre }}</strong><span>${{ p.precio }}</span>
+    <div class="producto-item" 
+         data-id="{{ p.id }}" 
+         data-codigo="{{ p.codigo|default:'' }}" 
+         data-stock="{{ p.stock }}" 
+         data-nombre="{{ p.nombre|lower }}" 
+         data-precio="{{ p.precio }}" 
+         data-categoria="{{ p.categoria.nombre|slugify }}">
+        <strong>{{ p.nombre }}</strong>
     </div>
     {% endfor %}
 </div>
 
 <div class="pos-container">
-    
     <div class="ticket-panel">
         <div class="ticket-header">
             <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="Logo" class="ticket-logo">
@@ -181,15 +188,17 @@
             <label><input type="radio" name="formato" value="texto"> Texto</label>
         </div>
 
-        <div style="background: #fff; padding: 12px; border-radius: 8px; display: flex; justify-content: space-around; align-items: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);">
+        <div style="background: #fff; padding: 12px; border-radius: 8px; display: flex; justify-content: space-around; align-items: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); margin-bottom: 15px;">
             <button id="btn-ver-ticket" title="Ver Recibo" style="background:none; border:none; cursor:pointer; font-size:22px;">🖼️</button>
-            <button onclick="alert('Enlace copiado')" title="Compartir" style="background:none; border:none; cursor:pointer; font-size:22px;">🔗</button>
+            <button title="Compartir" style="background:none; border:none; cursor:pointer; font-size:22px;">🔗</button>
             <button id="btn-imprimir-bt" title="Imprimir" style="background:none; border:none; cursor:pointer; font-size:22px;">🖨️</button>
-            <button onclick="alert('Abriendo WhatsApp...')" title="WhatsApp" style="background:none; border:none; cursor:pointer; font-size:22px;">🟢</button>
+            <button title="WhatsApp" style="background:none; border:none; cursor:pointer; font-size:22px;">🟢</button>
         </div>
 
-        <div style="margin-top: 18px;">
-            <a href="#" onclick="window.location.reload();" style="color: #7B2CBF; font-size: 12px; font-weight: bold; text-decoration: none;">ⓘ Personalizar Recibo/Ticket</a>
+        <div style="margin-top: 10px;">
+            <button onclick="reiniciarPOS()" style="width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(40,167,69,0.2);">
+                🏁 FINALIZAR VENTA
+            </button>
         </div>
     </div>
 </div>
@@ -200,7 +209,7 @@
     let metodoPago = 'EFECTIVO';
     let categoriaActivaModal = 'todas';
 
-    // Atajo de teclado F7
+    // Escucha el atajo F7 para invocar el catálogo
     window.addEventListener('keydown', function(e) {
         if (e.key === 'F7') {
             e.preventDefault();
@@ -208,6 +217,7 @@
         }
     });
 
+    // Cambiar método de pago en la interfaz compacta
     function setMetodo(m) {
         metodoPago = m;
         document.querySelectorAll('.metodo-pago-btn').forEach(b => b.classList.remove('active'));
@@ -215,24 +225,46 @@
         if(ids[m]) document.getElementById(ids[m]).classList.add('active');
     }
 
+    // Inserción limpia y agrupada de productos en el carrito local
     function agregarAlCarrito(id, nombre, precio) {
-        carrito.push({id, nombre, precio: parseFloat(precio)});
+        const productoExistente = carrito.find(item => item.id === id);
+
+        if (productoExistente) {
+            productoExistente.cantidad += 1;
+        } else {
+            carrito.push({
+                id: id, 
+                nombre: nombre, 
+                precio: parseFloat(precio),
+                cantidad: 1
+            });
+        }
         renderCarrito();
     }
 
+    // Pintar los elementos agregados en el ticket central
     function renderCarrito() {
         const lista = document.getElementById('lista-carrito');
         lista.innerHTML = '';
         total = 0;
+        
         if (carrito.length === 0) {
             lista.innerHTML = '<p style="text-align: center; color: #555; margin-top: 20px;">Escanée un código o use el botón de búsqueda superior.</p>';
         } else {
             carrito.forEach((item, index) => {
-                total += item.precio;
+                const subtotalItem = item.precio * item.cantidad;
+                total += subtotalItem;
+                
                 lista.innerHTML += `
                     <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; align-items: center;">
-                        <span>${item.nombre}</span>
-                        <span style="font-weight: bold; color: #FFC000;">$${item.precio.toFixed(0)} <button onclick="eliminar(${index})" style="color:#ff4d4d; background:none; border:none; cursor:pointer; margin-left: 8px; font-size: 14px;">✕</button></span>
+                        <div style="display: flex; flex-direction: column; max-width: 70%;">
+                            <span style="font-weight: bold; text-transform: uppercase;">${item.nombre}</span>
+                            <small style="color: #aaa;">${item.cantidad} x $${item.precio.toFixed(0)}</small>
+                        </div>
+                        <span style="font-weight: bold; color: #FFC000; display: flex; align-items: center; gap: 8px;">
+                            $${subtotalItem.toFixed(0)} 
+                            <button onclick="eliminar(${index})" style="color:#ff4d4d; background:none; border:none; cursor:pointer; font-size: 14px; padding: 0 4px;">✕</button>
+                        </span>
                     </div>`;
             });
         }
@@ -241,20 +273,32 @@
 
     function eliminar(i) { carrito.splice(i, 1); renderCarrito(); }
 
-    /* LÓGICA DEL CATÁLOGO AVANZADO */
+    /* =========================================================================
+       MANEJO Y FILTRADO DEL CATÁLOGO (MODAL F7) CORREGIDO
+       ========================================================================= */
     function abrirModalBusqueda() {
-        document.getElementById('modal-busqueda-prod').style.display = 'block';
-        document.getElementById('input-filtrar-modal').value = '';
-        document.getElementById('input-filtrar-modal').focus();
-        filtrarProductosModal();
+        const modal = document.getElementById('modal-busqueda-prod');
+        if (modal) {
+            modal.style.display = 'block';
+            const inputModal = document.getElementById('input-filtrar-modal');
+            if (inputModal) {
+                inputModal.value = '';
+                inputModal.focus();
+            }
+            filtrarProductosModal();
+        }
     }
 
-    function cerrarModalBusqueda() { document.getElementById('modal-busqueda-prod').style.display = 'none'; }
+    function cerrarModalBusqueda() { 
+        const modal = document.getElementById('modal-busqueda-prod');
+        if (modal) modal.style.display = 'none'; 
+    }
 
     function filtrarCategoriaModal(slug) {
         categoriaActivaModal = slug;
         document.querySelectorAll('.cat-modal-item').forEach(el => {
-            if (el.innerText.toLowerCase() === slug || (slug === 'todas' && el.innerText === 'TODOS')) {
+            // Mapeo visual de la categoría activa en la barra superior de la modal
+            if (el.getAttribute('onclick').includes(slug)) {
                 el.style.background = '#7B2CBF'; el.style.color = 'white';
             } else {
                 el.style.background = '#e9ecef'; el.style.color = '#495057';
@@ -265,14 +309,20 @@
 
     function filtrarProductosModal() {
         const contenedor = document.getElementById('lista-productos-modal');
+        if (!contenedor) return;
         contenedor.innerHTML = '';
-        let busqueda = document.getElementById('input-filtrar-modal').value.toLowerCase().trim();
         
+        let inputEl = document.getElementById('input-filtrar-modal');
+        let busqueda = inputEl ? inputEl.value.toLowerCase().trim() : '';
+        
+        // CORRECCIÓN: Lee de forma 100% segura los datasets estables generados por Django
         document.querySelectorAll('#grid-productos .producto-item').forEach(p => {
-            const nombre = p.querySelector('strong').innerText.toLowerCase();
-            const codigo = p.dataset.codigo;
-            const categoria = p.dataset.categoria;
+            const idProd = p.dataset.id;
+            const nombre = p.dataset.nombre || '';
+            const codigo = p.dataset.codigo || '';
+            const categoria = p.dataset.categoria || '';
             const precio = parseFloat(p.dataset.precio || 0);
+            const nombreReal = p.querySelector('strong').innerText;
 
             const coincideFiltro = nombre.includes(busqueda) || codigo.includes(busqueda);
             const coincideCat = (categoriaActivaModal === 'todas' || categoria === categoriaActivaModal);
@@ -280,17 +330,19 @@
             if (coincideFiltro && coincideCat) {
                 const div = document.createElement('div');
                 div.style = "background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;";
+                
                 div.onclick = () => {
-                    agregarAlCarrito(p.dataset.id, p.querySelector('strong').innerText, precio);
+                    agregarAlCarrito(idProd, nombreReal, precio);
                     cerrarModalBusqueda();
                 };
+                
                 div.innerHTML = `
                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; font-weight: bold;">
-                        <span>${codigo}</span> <span>PZA</span>
+                        <span>${codigo || 'PZA'}</span> <span>PZA</span>
                     </div>
-                    <div style="font-size: 14px; font-weight: bold; color: #212529; margin: 5px 0; text-transform: uppercase;">${p.querySelector('strong').innerText}</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #212529; margin: 5px 0; text-transform: uppercase;">${nombreReal}</div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
-                        <span style="color: #6c757d; font-size: 12px;">#${p.dataset.stock}.00</span>
+                        <span style="color: #6c757d; font-size: 12px;">Catálogo</span>
                         <span style="font-size: 16px; font-weight: bold; color: #28a745;">$${precio.toFixed(0)}</span>
                     </div>
                 `;
@@ -299,104 +351,101 @@
         });
     }
 
+    /* =========================================================================
+       MODALES TRANSACCIONALES (COBRO, RESUMEN Y CONFIGURACIÓN)
+       ========================================================================= */
     function abrirModalCobro() {
         if (carrito.length === 0) return alert("⚠️ Selecciona productos primero.");
-        const ahora = new Date();
-        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
-        document.getElementById('modal-fecha').value = ahora.toISOString().slice(0, 16);
-        document.getElementById('modal-cliente').value = "Venta Mostrador";
-        document.getElementById('modal-descuento').value = 0;
-        document.getElementById('modal-notas').value = "";
         
-        document.getElementById('modal-subtotal-txt').innerText = "$" + total.toFixed(0);
-        document.getElementById('modal-total-txt').innerText = "$" + total.toFixed(0);
+        document.getElementById('modal-subtotal-txt').innerText = `$${total.toFixed(0)}`;
+        document.getElementById('modal-total-txt').innerText = `$${total.toFixed(0)}`;
+        document.getElementById('modal-descuento').value = 0;
         document.getElementById('modal-cobro').style.display = 'block';
     }
 
-    function cerrarModalCobro() { document.getElementById('modal-cobro').style.display = 'none'; }
-
-    function actualizarTotalModal() {
-        let desc = parseFloat(document.getElementById('modal-descuento').value) || 0;
-        if (desc < 0) desc = 0;
-        if (desc > total) desc = total;
-        document.getElementById('modal-descuento').value = desc;
-        document.getElementById('modal-total-txt').innerText = "$" + (total - desc).toFixed(0);
+    function cerrarModalCobro() {
+        document.getElementById('modal-cobro').style.display = 'none';
     }
 
-    // Función para limpiar el POS y prepararlo para la siguiente transacción sin recargar obligatoriamente
+    function actualizarTotalModal() {
+        let descuento = parseFloat(document.getElementById('modal-descuento').value) || 0;
+        let neto = total - descuento;
+        if (neto < 0) neto = 0;
+        document.getElementById('modal-total-txt').innerText = `$${neto.toFixed(0)}`;
+    }
+
     function reiniciarPOS() {
         carrito = [];
         renderCarrito();
         setMetodo('EFECTIVO');
         document.getElementById('modal-exito-venta').style.display = 'none';
+        
         const btnCobrar = document.getElementById('btn-cobrar');
-        btnCobrar.disabled = false;
-        btnCobrar.innerText = "CONFIRMAR PAGO";
+        if (btnCobrar) {
+            btnCobrar.disabled = false;
+            btnCobrar.innerText = "CONFIRMAR PAGO";
+        }
     }
 
     async function enviarVentaFinal() {
-        const finalTotal = total - parseFloat(document.getElementById('modal-descuento').value || 0);
-        const clienteNom = document.getElementById('modal-cliente').value || "Venta Mostrador";
-        
-        const payload = {
-            carrito: carrito,
-            total: finalTotal,
-            forma_pago: metodoPago,
-            cliente: clienteNom,
-            descuento: document.getElementById('modal-descuento').value,
-            fecha: document.getElementById('modal-fecha').value,
-            notas: document.getElementById('modal-notas').value
-        };
-
+        cerrarModalCobro();
         const btn = document.getElementById('btn-cobrar');
         btn.disabled = true;
+        btn.innerText = "PROCESANDO...";
+
+        let cliente = document.getElementById('modal-cliente').value.trim() || "Venta Mostrador";
+        let descuento = parseFloat(document.getElementById('modal-descuento').value) || 0;
+        let notas = document.getElementById('modal-notas').value.trim();
+        let fechaOpcional = document.getElementById('modal-fecha').value;
 
         try {
             const response = await fetch('/procesar-pago/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ 
+                    carrito: carrito, 
+                    total: (total - descuento < 0 ? 0 : total - descuento), 
+                    forma_pago: metodoPago, 
+                    cliente: cliente,
+                    descuento: descuento,
+                    notas: notas,
+                    fecha_personalizada: fechaOpcional
+                })
             });
             const res = await response.json();
             if (res.status === 'ok') {
-                cerrarModalCobro();
-                
-                // 1. Mostrar el total en la ventana de éxito
-                document.getElementById('exito-total-txt').innerText = "$" + finalTotal.toFixed(0);
+                document.getElementById('exito-total-txt').innerText = "$" + (total - descuento).toFixed(0);
                 document.getElementById('modal-exito-venta').style.display = 'block';
                 
-                // 2. Definir las URLs del Ticket (Usa la URL absoluta del dominio actual para WhatsApp)
                 const urlLocalTicket = `/tienda/ticket/venta/${res.venta_id}/`;
                 const urlAbsolutaTicket = window.location.origin + urlLocalTicket;
 
-                // 3. Configurar acciones de los botones de la modal de éxito
                 document.getElementById('btn-ver-ticket').onclick = () => window.open(urlLocalTicket, '_blank');
                 document.getElementById('btn-imprimir-bt').onclick = () => window.open(urlLocalTicket, '_blank');
-                
-                // Copiar enlace al portapapeles de manera real
+
                 document.querySelector('[title="Compartir"]').onclick = async () => {
                     try {
                         await navigator.clipboard.writeText(urlAbsolutaTicket);
-                        alert('🔗 ¡Enlace del ticket copiado al portapapeles!');
+                        alert('🔗 ¡Enlace del ticket copiado!');
                     } catch (err) {
-                        alert('No se pudo copiar automáticamente: ' + urlAbsolutaTicket);
+                        alert('Enlace: ' + urlAbsolutaTicket);
                     }
                 };
 
-                // Lógica Real de WhatsApp Web/Desktop utilizando la API oficial de WhatsApp
                 document.querySelector('[title="WhatsApp"]').onclick = () => {
-                    const mensajeWa = `¡Hola *${clienteNom}*! Tu comprobante de compra en *EL ZOCO* por un total de *$${finalTotal.toFixed(0)}* está listo. Puedes consultarlo aquí: ${urlAbsolutaTicket}`;
-                    const urlWhatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWa)}`;
-                    window.open(urlWhatsapp, '_blank');
+                    const msg = `¡Hola! Tu ticket de compra en *EL ZOCO* por un total de *$${(total - descuento).toFixed(0)}* está listo: ${urlAbsolutaTicket}`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
                 };
 
             } else {
                 alert("❌ Error: " + res.message);
                 btn.disabled = false;
+                btn.innerText = "CONFIRMAR PAGO";
             }
         } catch (e) {
-            alert("❌ Error de comunicación con el servidor.");
+            alert("❌ Error de red al comunicarse con el servidor.");
             btn.disabled = false;
+            btn.innerText = "CONFIRMAR PAGO";
         }
     }
 </script>
