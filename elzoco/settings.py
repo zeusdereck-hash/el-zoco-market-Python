@@ -177,7 +177,7 @@ JAZZMIN_UI_TWEAKS = {
     
     # Tema OSCURO por defecto
     "theme": "darkly", 
-    "dark_mode_theme": "darkly",
+    "default_theme_mode": "dark",
     
     "button_classes": {
         "primary": "btn-primary",

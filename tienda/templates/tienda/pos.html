@@ -1,24 +1,38 @@
-{% extends "admin/base_site.html" %} {% load static %} {% block content %}
-<style>
-    /* 1. Tipografía y Estilos de Categorías */
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+{% extends "admin/base_site.html" %}
+{% load static %}
 
-    .btn-categoria {
-        background: #343a40; color: white; border: 1px solid #444; 
-        padding: 10px 20px; border-radius: 25px; cursor: pointer; 
-        transition: all 0.3s ease; font-size: 14px;
-    }
-    .btn-categoria.active { 
-        background: #FFC000 !important; color: #000 !important; 
-        font-weight: bold; box-shadow: 0 4px 8px rgba(255, 192, 0, 0.4);
-    }
+{% block content %}
+<style>
+    /* 1. Tipografía y Estilos de la Consola */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f0f0; }
 
     .pos-container {
-        display: grid; grid-template-columns: 1fr 320px; 
-        gap: 20px; height: 85vh; padding: 10px; background: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 75vh;
+        height: auto;
+        padding: 20px 10px;
+        box-sizing: border-box;
     }
 
-    /* Estilos del Header del Ticket (Estilo Ecommerce) */
+    /* Contenedor Único Estilo Consola Compacta - Corregido el alto dinámico */
+    .ticket-panel {
+        background: #1a1a1a; 
+        color: white; 
+        border-radius: 15px; 
+        padding: 25px; 
+        display: flex; 
+        flex-direction: column; 
+        border-left: 4px solid #FFC000;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        height: auto;
+        box-sizing: border-box;
+    }
+
+    /* Estilos del Header del Ticket */
     .ticket-header {
         text-align: center;
         padding-bottom: 15px;
@@ -26,12 +40,12 @@
         margin-bottom: 15px;
     }
     .ticket-logo {
-        width: 80px; /* Ajusta según el tamaño de tu logo */
+        width: 80px; 
         height: auto;
         margin-bottom: 5px;
     }
     .ticket-title {
-        font-family: 'Arial Black', Gadget, sans-serif; /* Simil a cabecera ecommerce */
+        font-family: 'Arial Black', Gadget, sans-serif; 
         font-size: 1.4em;
         letter-spacing: 1px;
         margin: 0;
@@ -39,77 +53,143 @@
         text-transform: uppercase;
     }
 
-    /* Ajustes para Android / Móvil */
-    @media (max-width: 992px) {
-        .pos-container { grid-template-columns: 1fr !important; height: auto !important; display: flex !important; flex-direction: column !important; }
-        .ticket-panel { position: sticky; bottom: 0; z-index: 100; width: 100% !important; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); }
-    }
-
     .metodo-pago-btn {
-        background: #495057; color: white; border: none; padding: 8px; 
-        border-radius: 5px; font-size: 11px; cursor: pointer; transition: 0.2s;
+        background: #495057; color: white; border: none; padding: 10px; 
+        border-radius: 5px; font-size: 12px; cursor: pointer; transition: 0.2s;
     }
     .metodo-pago-btn.active { background: #FFC000; color: black; font-weight: bold; }
 </style>
 
+<div id="grid-productos" style="display:none;">
+    {% for p in productos %}
+    <div class="producto-item" data-id="{{ p.id }}" data-codigo="{{ p.codigo|default:'7501018311315' }}" data-stock="{{ p.stock }}" data-nombre="{{ p.nombre|lower }}" data-precio="{{ p.precio }}" data-categoria="{{ p.categoria.nombre|slugify }}">
+        <strong>{{ p.nombre }}</strong><span>${{ p.precio }}</span>
+    </div>
+    {% endfor %}
+</div>
+
 <div class="pos-container">
     
-    <div class="grid-panel" style="background: white; border-radius: 15px; padding: 20px; overflow-y: auto;">
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="input-buscador" oninput="filtrarProductos()" placeholder="🔍 Buscar por nombre o escanear..." 
-                   style="width: 100%; padding: 15px; border-radius: 30px; border: 2px solid #FFC000; font-size: 18px; background: #1a1a1a; color: white;">
-        </div>
-
-        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee;">
-            <button onclick="filtrarCategoria('todas')" class="btn-categoria active">Todas</button>
-            {% for cat in categorias %}
-            <button onclick="filtrarCategoria('{{ cat.nombre|slugify }}')" class="btn-categoria">{{ cat.nombre }}</button>
-            {% endfor %}
-        </div>
-
-        <div id="grid-productos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">
-            {% for p in productos %}
-            <button onclick="agregarAlCarrito('{{p.id}}', '{{p.nombre|escapejs}}', '{{p.precio}}')"
-                    class="producto-item" data-nombre="{{ p.nombre|lower }}" data-categoria="{{ p.categoria.nombre|slugify }}"
-                    style="border: none; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer;">
-                <div style="height: 80px; background: #eee; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center;">
-                    {% if p.imagen %}<img src="{{ p.imagen.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-                    {% else %}<span style="font-size: 30px;">📦</span>{% endif %}
-                </div>
-                <strong style="display: block; font-size: 12px; height: 32px; overflow: hidden;">{{ p.nombre }}</strong>
-                <span style="color: #28a745; font-weight: bold;">${{ p.precio|floatformat:0 }}</span>
-            </button>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="ticket-panel" style="background: #1a1a1a; color: white; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; border-left: 4px solid #FFC000;">
+    <div class="ticket-panel">
         <div class="ticket-header">
             <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="Logo" class="ticket-logo">
             <h2 class="ticket-title">EL ZOCO</h2>
             <small style="color: #888;">Folio: <span id="folio-display" style="color: #FFC000; font-weight: bold;">{{ folio }}</span></small>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="abrirModalBusqueda()" style="width: 100%; background: #7B2CBF; border: none; color: white; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(123, 44, 191, 0.3); transition: 0.2s;">
+                    🔍 BUSCAR PRODUCTO (F7)
+                </button>
+            </div>
         </div>
 
-        <div id="lista-carrito" style="flex-grow: 1; margin-top: 10px; overflow-y: auto; min-height: 150px; font-size: 0.85em;">
-            <p style="text-align: center; color: #555;">Carrito vacío</p>
+        <div id="lista-carrito" style="margin-top: 10px; overflow-y: auto; max-height: 200px; min-height: 80px; font-size: 0.9em; padding-right: 5px;">
+            <p style="text-align: center; color: #555; margin-top: 20px;">Escanée un código o use el botón de búsqueda superior.</p>
         </div>
 
-        <div style="background: #222; padding: 15px; border-radius: 10px; border: 1px solid #333;">
-            <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
+        <div style="background: #222; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 22px; font-weight: bold; margin-bottom: 15px;">
                 <span>TOTAL:</span>
                 <span id="total-monto" style="color: #FFC000;">$0</span>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px;">
                 <button onclick="setMetodo('EFECTIVO')" class="metodo-pago-btn active" id="pago-efectivo">EFECTIVO</button>
                 <button onclick="setMetodo('TRANSFERENCIA')" class="metodo-pago-btn" id="pago-transf">TRANSF.</button>
                 <button onclick="setMetodo('MERCADO PAGO')" class="metodo-pago-btn" id="pago-mp">M. PAGO</button>
-                <button onclick="setMetodo('PAYPAL')" class="metodo-pago-btn" id="pago-paypal">PAYPAL</button>
+                <button onclick="setMetodo('CREDITO')" class="metodo-pago-btn" id="pago-credito" style="border: 1px dashed #FFC000;">A CRÉDITO</button>
             </div>
 
-            <button id="btn-cobrar" onclick="cobrar()" style="width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: 0.3s;">
+            <button id="btn-cobrar" onclick="abrirModalCobro()" style="width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);">
                 CONFIRMAR PAGO
             </button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-busqueda-prod" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);">
+    <div style="background: #fff; margin: 4% auto; max-width: 480px; width: 92%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.3);">
+        <div style="background: #f8f9fa; padding: 14px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #e9ecef;">
+            <input type="text" id="input-filtrar-modal" oninput="filtrarProductosModal()" placeholder="🔍 Buscar por nombre en catálogo..." style="flex: 1; padding: 10px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; color: #333;" autofocus>
+            <button onclick="cerrarModalBusqueda()" style="background: none; border: none; font-size: 26px; cursor: pointer; color: #6c757d; line-height: 1;">&times;</button>
+        </div>
+        
+        <div style="display: flex; gap: 8px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #f1f3f5; overflow-x: auto; font-size: 11px; font-weight: bold;">
+            <span onclick="filtrarCategoriaModal('todas')" class="cat-modal-item" style="background: #7B2CBF; color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer;">TODOS</span>
+            {% for cat in categorias %}
+            <span onclick="filtrarCategoriaModal('{{ cat.nombre|slugify }}')" class="cat-modal-item" style="background: #e9ecef; color: #495057; padding: 6px 12px; border-radius: 20px; cursor: pointer;">{{ cat.nombre|upper }}</span>
+            {% endfor %}
+        </div>
+
+        <div id="lista-productos-modal" style="max-height: 380px; overflow-y: auto; padding: 12px; background: #f1f3f5; display: flex; flex-direction: column; gap: 10px;">
+            </div>
+    </div>
+</div>
+
+<div id="modal-cobro" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);">
+    <div style="background-color: #fff; margin: 6% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f4f4f4; padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #333; font-size: 18px;">🛒 Configurar Transacción</h3>
+            <span onclick="cerrarModalCobro()" style="font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer;">&times;</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #555; font-size: 13px;">Nombre del Cliente:</label>
+                <input type="text" id="modal-cliente" value="Venta Mostrador" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #555; font-size: 13px;">Descuento ($):</label>
+                <input type="number" id="modal-descuento" value="0" min="0" oninput="actualizarTotalModal()" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #555; font-size: 13px;">Fecha de Venta (Opcional):</label>
+                <input type="datetime-local" id="modal-fecha" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #555; font-size: 13px;">Notas Extra:</label>
+                <textarea id="modal-notas" rows="2" placeholder="Observaciones..." style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: none;"></textarea>
+            </div>
+
+            <div style="background-color: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 5px; border-left: 4px solid #FFC000;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #666;">
+                    <span>Subtotal:</span> <span id="modal-subtotal-txt">$0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #000; margin-top: 4px;">
+                    <span>TOTAL NETO:</span> <span id="modal-total-txt">$0</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="button" onclick="cerrarModalCobro()" style="flex: 1; padding: 10px; background: #e0e0e0; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Cancelar</button>
+                <button type="button" onclick="enviarVentaFinal()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">✔ Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-exito-venta" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7);">
+    <div style="background: #e0e0e0; margin: 12% auto; padding: 25px; border-radius: 12px; max-width: 360px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        <div style="background: #00A859; color: white; display: inline-flex; align-items: center; gap: 8px; padding: 8px 24px; border-radius: 20px; font-weight: bold; font-size: 15px; margin-bottom: 15px;">
+            ✓ Venta Registrada
+        </div>
+        <div id="exito-total-txt" style="font-size: 34px; font-weight: bold; color: #222; margin-bottom: 15px;">$0</div>
+        
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; font-size: 13px; color: #333; font-weight: bold;">
+            <label><input type="radio" name="formato" value="pdf"> PDF</label>
+            <label><input type="radio" name="formato" value="jpg" checked> JPG</label>
+            <label><input type="radio" name="formato" value="texto"> Texto</label>
+        </div>
+
+        <div style="background: #fff; padding: 12px; border-radius: 8px; display: flex; justify-content: space-around; align-items: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);">
+            <button id="btn-ver-ticket" title="Ver Recibo" style="background:none; border:none; cursor:pointer; font-size:22px;">🖼️</button>
+            <button onclick="alert('Enlace copiado')" title="Compartir" style="background:none; border:none; cursor:pointer; font-size:22px;">🔗</button>
+            <button id="btn-imprimir-bt" title="Imprimir" style="background:none; border:none; cursor:pointer; font-size:22px;">🖨️</button>
+            <button onclick="alert('Abriendo WhatsApp...')" title="WhatsApp" style="background:none; border:none; cursor:pointer; font-size:22px;">🟢</button>
+        </div>
+
+        <div style="margin-top: 18px;">
+            <a href="#" onclick="window.location.reload();" style="color: #7B2CBF; font-size: 12px; font-weight: bold; text-decoration: none;">ⓘ Personalizar Recibo/Ticket</a>
         </div>
     </div>
 </div>
@@ -118,28 +198,21 @@
     let carrito = [];
     let total = 0;
     let metodoPago = 'EFECTIVO';
+    let categoriaActivaModal = 'todas';
 
-    function filtrarProductos() {
-        let bus = document.getElementById('input-buscador').value.toLowerCase().trim();
-        document.querySelectorAll('.producto-item').forEach(it => {
-            it.style.display = it.dataset.nombre.includes(bus) ? 'block' : 'none';
-        });
-    }
-
-    function filtrarCategoria(slug) {
-        document.querySelectorAll('.producto-item').forEach(p => {
-            p.style.display = (slug === 'todas' || p.dataset.categoria === slug) ? 'block' : 'none';
-        });
-        document.querySelectorAll('.btn-categoria').forEach(btn => {
-            btn.classList.toggle('active', btn.innerText.toLowerCase().includes(slug) || (slug === 'todas' && btn.innerText === 'Todas'));
-        });
-    }
+    // Atajo de teclado F7
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'F7') {
+            e.preventDefault();
+            abrirModalBusqueda();
+        }
+    });
 
     function setMetodo(m) {
         metodoPago = m;
         document.querySelectorAll('.metodo-pago-btn').forEach(b => b.classList.remove('active'));
-        const ids = {'EFECTIVO': 'pago-efectivo', 'TRANSFERENCIA': 'pago-transf', 'MERCADO PAGO': 'pago-mp', 'PAYPAL': 'pago-paypal'};
-        document.getElementById(ids[m]).classList.add('active');
+        const ids = {'EFECTIVO': 'pago-efectivo', 'TRANSFERENCIA': 'pago-transf', 'MERCADO PAGO': 'pago-mp', 'CREDITO': 'pago-credito'};
+        if(ids[m]) document.getElementById(ids[m]).classList.add('active');
     }
 
     function agregarAlCarrito(id, nombre, precio) {
@@ -152,14 +225,14 @@
         lista.innerHTML = '';
         total = 0;
         if (carrito.length === 0) {
-            lista.innerHTML = '<p style="text-align: center; color: #555;">Carrito vacío</p>';
+            lista.innerHTML = '<p style="text-align: center; color: #555; margin-top: 20px;">Escanée un código o use el botón de búsqueda superior.</p>';
         } else {
             carrito.forEach((item, index) => {
                 total += item.precio;
                 lista.innerHTML += `
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; align-items: center;">
                         <span>${item.nombre}</span>
-                        <span>$${item.precio.toFixed(0)} <button onclick="eliminar(${index})" style="color:#ff4d4d; background:none; border:none; cursor:pointer;">✕</button></span>
+                        <span style="font-weight: bold; color: #FFC000;">$${item.precio.toFixed(0)} <button onclick="eliminar(${index})" style="color:#ff4d4d; background:none; border:none; cursor:pointer; margin-left: 8px; font-size: 14px;">✕</button></span>
                     </div>`;
             });
         }
@@ -168,30 +241,161 @@
 
     function eliminar(i) { carrito.splice(i, 1); renderCarrito(); }
 
-    async function cobrar() {
+    /* LÓGICA DEL CATÁLOGO AVANZADO */
+    function abrirModalBusqueda() {
+        document.getElementById('modal-busqueda-prod').style.display = 'block';
+        document.getElementById('input-filtrar-modal').value = '';
+        document.getElementById('input-filtrar-modal').focus();
+        filtrarProductosModal();
+    }
+
+    function cerrarModalBusqueda() { document.getElementById('modal-busqueda-prod').style.display = 'none'; }
+
+    function filtrarCategoriaModal(slug) {
+        categoriaActivaModal = slug;
+        document.querySelectorAll('.cat-modal-item').forEach(el => {
+            if (el.innerText.toLowerCase() === slug || (slug === 'todas' && el.innerText === 'TODOS')) {
+                el.style.background = '#7B2CBF'; el.style.color = 'white';
+            } else {
+                el.style.background = '#e9ecef'; el.style.color = '#495057';
+            }
+        });
+        filtrarProductosModal();
+    }
+
+    function filtrarProductosModal() {
+        const contenedor = document.getElementById('lista-productos-modal');
+        contenedor.innerHTML = '';
+        let busqueda = document.getElementById('input-filtrar-modal').value.toLowerCase().trim();
+        
+        document.querySelectorAll('#grid-productos .producto-item').forEach(p => {
+            const nombre = p.querySelector('strong').innerText.toLowerCase();
+            const codigo = p.dataset.codigo;
+            const categoria = p.dataset.categoria;
+            const precio = parseFloat(p.dataset.precio || 0);
+
+            const coincideFiltro = nombre.includes(busqueda) || codigo.includes(busqueda);
+            const coincideCat = (categoriaActivaModal === 'todas' || categoria === categoriaActivaModal);
+
+            if (coincideFiltro && coincideCat) {
+                const div = document.createElement('div');
+                div.style = "background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;";
+                div.onclick = () => {
+                    agregarAlCarrito(p.dataset.id, p.querySelector('strong').innerText, precio);
+                    cerrarModalBusqueda();
+                };
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; font-weight: bold;">
+                        <span>${codigo}</span> <span>PZA</span>
+                    </div>
+                    <div style="font-size: 14px; font-weight: bold; color: #212529; margin: 5px 0; text-transform: uppercase;">${p.querySelector('strong').innerText}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
+                        <span style="color: #6c757d; font-size: 12px;">#${p.dataset.stock}.00</span>
+                        <span style="font-size: 16px; font-weight: bold; color: #28a745;">$${precio.toFixed(0)}</span>
+                    </div>
+                `;
+                contenedor.appendChild(div);
+            }
+        });
+    }
+
+    function abrirModalCobro() {
         if (carrito.length === 0) return alert("⚠️ Selecciona productos primero.");
+        const ahora = new Date();
+        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+        document.getElementById('modal-fecha').value = ahora.toISOString().slice(0, 16);
+        document.getElementById('modal-cliente').value = "Venta Mostrador";
+        document.getElementById('modal-descuento').value = 0;
+        document.getElementById('modal-notas').value = "";
+        
+        document.getElementById('modal-subtotal-txt').innerText = "$" + total.toFixed(0);
+        document.getElementById('modal-total-txt').innerText = "$" + total.toFixed(0);
+        document.getElementById('modal-cobro').style.display = 'block';
+    }
+
+    function cerrarModalCobro() { document.getElementById('modal-cobro').style.display = 'none'; }
+
+    function actualizarTotalModal() {
+        let desc = parseFloat(document.getElementById('modal-descuento').value) || 0;
+        if (desc < 0) desc = 0;
+        if (desc > total) desc = total;
+        document.getElementById('modal-descuento').value = desc;
+        document.getElementById('modal-total-txt').innerText = "$" + (total - desc).toFixed(0);
+    }
+
+    // Función para limpiar el POS y prepararlo para la siguiente transacción sin recargar obligatoriamente
+    function reiniciarPOS() {
+        carrito = [];
+        renderCarrito();
+        setMetodo('EFECTIVO');
+        document.getElementById('modal-exito-venta').style.display = 'none';
+        const btnCobrar = document.getElementById('btn-cobrar');
+        btnCobrar.disabled = false;
+        btnCobrar.innerText = "CONFIRMAR PAGO";
+    }
+
+    async function enviarVentaFinal() {
+        const finalTotal = total - parseFloat(document.getElementById('modal-descuento').value || 0);
+        const clienteNom = document.getElementById('modal-cliente').value || "Venta Mostrador";
+        
+        const payload = {
+            carrito: carrito,
+            total: finalTotal,
+            forma_pago: metodoPago,
+            cliente: clienteNom,
+            descuento: document.getElementById('modal-descuento').value,
+            fecha: document.getElementById('modal-fecha').value,
+            notas: document.getElementById('modal-notas').value
+        };
+
         const btn = document.getElementById('btn-cobrar');
         btn.disabled = true;
-        btn.innerText = "PROCESANDO...";
 
         try {
             const response = await fetch('/procesar-pago/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify({ carrito, total, forma_pago: metodoPago, cliente: "Venta Mostrador" })
+                body: JSON.stringify(payload)
             });
             const res = await response.json();
             if (res.status === 'ok') {
-                alert("✅ Venta Registrada");
-                window.open(`/tienda/ticket/venta/${res.venta_id}/`, '_blank');
-                window.location.reload(); 
+                cerrarModalCobro();
+                
+                // 1. Mostrar el total en la ventana de éxito
+                document.getElementById('exito-total-txt').innerText = "$" + finalTotal.toFixed(0);
+                document.getElementById('modal-exito-venta').style.display = 'block';
+                
+                // 2. Definir las URLs del Ticket (Usa la URL absoluta del dominio actual para WhatsApp)
+                const urlLocalTicket = `/tienda/ticket/venta/${res.venta_id}/`;
+                const urlAbsolutaTicket = window.location.origin + urlLocalTicket;
+
+                // 3. Configurar acciones de los botones de la modal de éxito
+                document.getElementById('btn-ver-ticket').onclick = () => window.open(urlLocalTicket, '_blank');
+                document.getElementById('btn-imprimir-bt').onclick = () => window.open(urlLocalTicket, '_blank');
+                
+                // Copiar enlace al portapapeles de manera real
+                document.querySelector('[title="Compartir"]').onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(urlAbsolutaTicket);
+                        alert('🔗 ¡Enlace del ticket copiado al portapapeles!');
+                    } catch (err) {
+                        alert('No se pudo copiar automáticamente: ' + urlAbsolutaTicket);
+                    }
+                };
+
+                // Lógica Real de WhatsApp Web/Desktop utilizando la API oficial de WhatsApp
+                document.querySelector('[title="WhatsApp"]').onclick = () => {
+                    const mensajeWa = `¡Hola *${clienteNom}*! Tu comprobante de compra en *EL ZOCO* por un total de *$${finalTotal.toFixed(0)}* está listo. Puedes consultarlo aquí: ${urlAbsolutaTicket}`;
+                    const urlWhatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWa)}`;
+                    window.open(urlWhatsapp, '_blank');
+                };
+
             } else {
                 alert("❌ Error: " + res.message);
                 btn.disabled = false;
-                btn.innerText = "CONFIRMAR PAGO";
             }
         } catch (e) {
-            alert("❌ Error de red");
+            alert("❌ Error de comunicación con el servidor.");
             btn.disabled = false;
         }
     }

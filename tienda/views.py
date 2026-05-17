@@ -30,23 +30,90 @@ def pos_view(request):
     }
     return render(request, 'tienda/pos.html', context)
 
-# --- VISTAS DE TICKETS CORREGIDAS ---
+# --- LÓGICA DE TICKETS Y COMPROBANTES (Formato Unificado) ---
 
 def generar_ticket(request, tipo, id):
-    """Maneja la visualización del ticket de venta"""
+    """
+    Maneja la visualización del ticket de venta.
+    Unifica el contexto para que tanto 'venta.variable' como las variables planas funcionen.
+    """
     if tipo == 'venta':
-        venta = get_object_or_404(Venta, id=id)
+        obj = get_object_or_404(Venta, id=id)
+        
+        # Mapeamos los detalles para las plantillas que iteran sobre 'items' manuales
+        items = []
+        for det in obj.productos.all():
+            items.append({
+                'cantidad': int(det.cantidad),
+                'descripcion': det.descripcion,
+                'precio': int(det.precio_unitario),
+                'subtotal': int(det.subtotal)
+            })
+            
         context = {
-            'venta': venta,
-            'tipo_comprobante': 'TICKET DE VENTA',
+            'venta': obj,  # Enviamos el objeto completo para {{ venta.fecha }}, etc.
+            'tipo_comprobante': "TICKET DE VENTA",
+            'folio': obj.folio,
+            'fecha': obj.fecha,
+            'cliente': obj.cliente,
+            'items': items,
+            'total': int(obj.total),
+            'forma_pago': obj.forma_pago,
         }
         return render(request, 'tienda/ticket_pos.html', context)
-    return redirect('pos')
+    
+    return redirect('admin:index')
+
 
 def ticket_abono(request, abono_id):
-    """Maneja la visualización del ticket de abono (Evita el AttributeError)"""
-    abono = get_object_or_404(Abono, id=abono_id)
-    return render(request, 'tienda/ticket_abono.html', {'abono': abono})
+    """
+    Maneja la visualización del ticket de abono/estado de cuenta.
+    Inyecta exactamente las variables que el HTML en blanco está buscando.
+    """
+    abono_actual = get_object_or_404(Abono, id=abono_id)
+    deuda = abono_actual.deuda
+    historial_abonos = Abono.objects.filter(deuda=deuda).order_by('fecha')
+    
+    try:
+        lista_ids = list(historial_abonos.values_list('id', flat=True))
+        numero_pago_actual = lista_ids.index(abono_actual.id) + 1
+    except ValueError:
+        numero_pago_actual = 1
+
+    total_pagado = historial_abonos.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
+
+    # Mapeo de campos seguro para evitar "AttributeError" según tus modelos
+    proveedor_nombre = "No asignado"
+    if deuda:
+        if hasattr(deuda, 'persona'):
+            proveedor_nombre = deuda.persona
+        elif hasattr(deuda, 'proveedor'):
+            proveedor_nombre = deuda.proveedor
+        elif hasattr(deuda, 'cliente'):
+            proveedor_nombre = deuda.cliente
+
+    context = {
+        'abono': abono_actual,
+        'tipo_comprobante': 'COMPROBANTE DE ABONO',
+        
+        # Variables planas que tu HTML de abonos espera ver en pantalla:
+        'folio': f"ABO-{abono_actual.id:05d}",
+        'fecha': abono_actual.fecha,
+        'proveedor': proveedor_nombre, 
+        'historial': historial_abonos.filter(pagado=True),
+        
+        # Datos cuantitativos de la Deuda
+        'monto_total_origin': deuda.monto_total if deuda else 0,
+        'total_pagado': total_pagado,
+        'saldo_restante': deuda.saldo_pendiente if deuda else 0,
+        
+        # Datos complementarios de impresión
+        'usuario_atendio': request.user.get_full_name() or request.user.username or "SISTEMA",
+        'total_pagos': deuda.cantidad_pagos if deuda else 1,      
+        'periodicidad': deuda.periodicidad_dias if deuda else 0,  
+        'numero_pago': numero_pago_actual,        
+    }
+    return render(request, 'tienda/ticket_abono.html', context)
 
 @csrf_exempt
 def procesar_pago(request):
