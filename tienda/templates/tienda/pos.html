@@ -70,7 +70,7 @@
          data-codigo="{{ p.codigo|default:'' }}" 
          data-stock="{{ p.stock }}" 
          data-nombre="{{ p.nombre|lower }}" 
-         data-precio="{{ p.precio }}" 
+         data-precio="{{ p.precio|stringformat:".2f" }}" 
          data-categoria="{{ p.categoria.nombre|slugify }}">
         <strong>{{ p.nombre }}</strong>
     </div>
