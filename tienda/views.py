@@ -32,15 +32,12 @@ def pos_view(request):
 
 # --- LÓGICA DE TICKETS Y COMPROBANTES (Formato Unificado) ---
 
-def generar_ticket(request, tipo, id):
-    """
-    Maneja la visualización del ticket de venta.
-    Unifica el contexto para que tanto 'venta.variable' como las variables planas funcionen.
-    """
+def generar_ticket(request, id, tipo='venta'):
+    
     if tipo == 'venta':
-        obj = get_object_or_404(Venta, id=id)
-        
-        # Mapeamos los detalles para las plantillas que iteran sobre 'items' manuales
+        venta = get_object_or_404(Venta, id=id)
+        return render(request, 'tienda/ticket_pos.html', {'venta': venta})
+
         items = []
         for det in obj.productos.all():
             items.append({
@@ -82,25 +79,22 @@ def ticket_abono(request, abono_id):
 
     total_pagado = historial_abonos.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
 
-    # Mapeo de campos seguro para evitar "AttributeError" según tus modelos
+    # Mapeo de campo seguro según el modelo Deuda (usa .persona)
     proveedor_nombre = "No asignado"
     if deuda:
         if hasattr(deuda, 'persona'):
             proveedor_nombre = deuda.persona
         elif hasattr(deuda, 'proveedor'):
             proveedor_nombre = deuda.proveedor
-        elif hasattr(deuda, 'cliente'):
-            proveedor_nombre = deuda.cliente
 
     context = {
         'abono': abono_actual,
         'tipo_comprobante': 'COMPROBANTE DE ABONO',
         
-        # Variables planas que tu HTML de abonos espera ver en pantalla:
+        # Variables que el HTML espera
         'folio': f"ABO-{abono_actual.id:05d}",
         'fecha': abono_actual.fecha,
         'proveedor': proveedor_nombre, 
-        'historial': historial_abonos.filter(pagado=True),
         
         # Datos cuantitativos de la Deuda
         'monto_total_origin': deuda.monto_total if deuda else 0,

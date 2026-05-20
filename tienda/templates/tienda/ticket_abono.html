@@ -2,72 +2,143 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>Comprobante de Abono - El Zoco</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { width: 58mm; font-family: 'Courier New', monospace; font-size: 10px; margin: 0; padding: 1mm; color: #000; }
+        /* Dimensiones rígidas para tiquetera de 58mm */
+        @page { size: 58mm auto; margin: 0; }
+        
+        body { 
+            width: 48mm; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 11px; 
+            margin: 0 auto; 
+            padding: 5px 0;
+            color: #000; 
+            background: #fff;
+        }
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        .line { border-bottom: 1px dashed black; margin: 4px 0; }
-        .logo-img { max-width: 40mm; height: auto;}
-        .info-vendedor { font-size: 9px; margin-bottom: 2mm; }
-        table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
-        .total-section { font-size: 11px; }
-        .esquema-info { font-size: 9px; margin: 1mm 0; border: 1px solid #000; padding: 1px; }
+        .logo { width: 32mm; margin-bottom: 4px; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 5px 0; 
+            table-layout: fixed; 
+        }
+        td { vertical-align: top; overflow: hidden; }
+        .text-right { text-align: right; }
     </style>
 </head>
-<body onload="window.print()">
-    <div class="center">
-        <img src="/static/img/estructura/ELZOCO.png" class="logo-img" alt="Logo"><br>
-        <span class="bold" style="font-size: 12px;">EL ZOCO MARKET</span><br>
-        <div class="info-vendedor">Atendido por: <b>{{ usuario_atendio }}</b></div>
-    </div>
+<body>
 
-    <div class="line"></div>
-    <div class="center bold">{{ tipo_comprobante }}</div>
-    <b>Folio:</b> #AB-{{ folio }}<br>
-    <b>Fecha:</b> {{ fecha|date:"d/m/Y H:i" }}<br>
-    <b>Proveedor:</b> {{ proveedor }}
-    
-    <div class="esquema-info">
-        {% if total_pagos > 1 %}
-            <b>ESQUEMA:</b> {{ total_pagos }} PAGOS / CADA {{ periodicidad }} DÍAS<br>
-            <b>ESTADO:</b> PAGO {{ numero_pago }} DE {{ total_pagos }}
-        {% else %}
-            <b>ESQUEMA:</b> PAGO ÚNICO
-        {% endif %}
-    </div>
-    
-    <div class="line"></div>
-    <div class="center bold">HISTORIAL DE PAGOS</div>
-    <table>
-        <thead>
-            <tr>
-                <th align="left">Fecha</th>
-                <th align="right">Monto</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pago in historial %}
-            <tr>
-                <td>{{ pago.fecha|date:"d/m/y" }}</td>
-                <td align="right">${{ pago.monto }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div id="contenedor-ticket" style="background: #ffffff; padding: 2mm; width: 48mm;">
+        <div class="center">
+            <img src="/static/img/estructura/ELZOCO.png" class="logo" alt="Logo El Zoco">
+            <div class="bold" style="font-size: 12px; text-transform: uppercase;">El Zoco Integrated Services</div>
+            <div style="font-size: 8px; line-height: 1.2; margin-top: 2px;">
+                Oscar Marquez Cruz<br>
+                5580867149 | el.zoco.grup@gmail.com<br>
+                https://elzoco.pythonanywhere.com/<br>
+            </div>
+        </div>
 
-    <div class="line"></div>
-    <div class="total-section">
-        <table style="margin: 0;">
-            <tr><td>Total Deuda:</td><td align="right">${{ monto_total_origin }}</td></tr>
-            <tr><td>Total Pagado:</td><td align="right">-${{ total_pagado }}</td></tr>
-            <tr class="bold"><td>SALDO PENDIENTE:</td><td align="right">${{ saldo_restante }}</td></tr>
+        <div class="divider"></div>
+        
+        <div style="line-height: 1.3;">
+            <span class="bold">PROVEEDOR:</span> {{ proveedor|upper }}<br>
+            <span class="bold">FOLIO ABONO:</span> {{ folio }}<br>
+            <span class="bold">FECHA:</span> {{ fecha|date:"d/m/Y H:i" }}<br>
+            <span class="bold">ESQUEMA:</span> Pago {{ numero_pago }} de {{ total_pagos }}<br>
+            <span class="bold">FORMA PAGO:</span> {{ abono.forma_pago|default:"EFECTIVO" }}
+        </div>
+
+        <div class="divider"></div>
+
+        <table>
+            <thead>
+                <tr class="bold">
+                    <td style="width: 20%;">CANT</td>
+                    <td style="width: 50%;">DESC</td>
+                    <td style="width: 30%; text-align: right;">SUBT</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>ABONO A DEUDA</td>
+                    <td class="text-right">${{ abono.monto|floatformat:0 }}</td>
+                </tr>
+            </tbody>
         </table>
+
+        <div class="divider"></div>
+
+        <table>
+            <tbody>
+                <tr>
+                    <td style="width: 60%;">Deuda Original:</td>
+                    <td style="width: 40%; text-align: right;">${{ monto_total_origin|floatformat:0 }}</td>
+                </tr>
+                <tr>
+                    <td>Total Abonado:</td>
+                    <td style="width: 40%; text-align: right;">${{ total_pagado|floatformat:0 }}</td>
+                </tr>
+                <tr class="bold">
+                    <td>SU ABONO:</td>
+                    <td class="text-right">${{ abono.monto|floatformat:0 }}</td>
+                </tr>
+                <tr>
+                    <td colspan="2"><div class="divider"></div></td>
+                </tr>
+                <tr class="bold" style="font-size: 12px;">
+                    <td>SALDO RESTANTE:</td>
+                    <td class="text-right">${{ saldo_restante|floatformat:0 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <div class="center" style="font-size: 8px; margin-top: 8px; line-height: 1.2;">
+            <p class="bold">Atendió: {{ usuario_atendio|upper }}</p>
+            <p style="font-style: italic;">Comprobante de movimiento interno administrativo.</p>
+        </div>
     </div>
 
-    <div class="line"></div>
-    <div class="center">
-        *** Gracias por su Pago ***<br>
-        En El Zoco Siempre un Placer Servirle
-    </div>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Esperamos un momento breve para asegurar que fuentes e imágenes carguen bien
+            setTimeout(() => {
+                const elementoAConvertir = document.getElementById('contenedor-ticket');
+                
+                html2canvas(elementoAConvertir, {
+                    backgroundColor: '#ffffff',
+                    scale: 2, // Aumenta la resolución para que las letras no salgan borrosas en la térmica
+                    logging: false
+                }).then(canvas => {
+                    // Convertimos el lienzo a formato Imagen JPEG con calidad del 95%
+                    const imagenJpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // BORRAMOS TODO EL HTML DEL BODY y dejamos únicamente la etiqueta de la imagen
+                    document.body.innerHTML = `
+                        <div style="margin: 0; padding: 0; text-align: center; background: #ffffff; min-height: 100vh;">
+                            <img id="ticket-foto-pure" src="${imagenJpegUrl}" style="width: 48mm; display: block; margin: 0 auto;">
+                        </div>
+                    `;
+                    
+                    // Esperamos a que la imagen se acomode en el DOM y mandamos a imprimir automáticamente
+                    setTimeout(() => {
+                        window.print();
+                    }, 300);
+
+                }).catch(error => {
+                    console.error("Error al procesar el JPEG con html2canvas:", error);
+                });
+            }, 350);
+        });
+    </script>
 </body>
 </html>

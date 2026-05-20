@@ -2,8 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>Ticket de Venta - El Zoco</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        @page { size: 58mm 200mm; margin: 0; }
+        @page { size: 58mm auto; margin: 0; }
         body { 
             width: 48mm; 
             font-family: 'Courier New', Courier, monospace; 
@@ -11,65 +13,112 @@
             margin: 0 auto; 
             padding: 5px 0;
             color: #000; 
+            background: #fff;
         }
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        .logo { width: 35mm; margin-bottom: 5px; }
-        .divider { border-top: 1px dashed #000; margin: 5px 0; }
-        table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+        .logo { width: 32mm; margin-bottom: 4px; }
+        .divider { border-top: 1px dashed #000; margin: 6px 0; }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 5px 0; 
+            table-layout: fixed; 
+        }
+        td { vertical-align: top; overflow: hidden; }
         .text-right { text-align: right; }
     </style>
 </head>
-<body onload="window.print();">
-    <div class="center">
-        <img src="/static/img/estructura/ELZOCO.png" class="logo">
-        <div class="bold" style="font-size: 12px;">EL ZOCO INTEGRATED SERVICE</div>
-        <div style="font-size: 7px;">https://elzoco.pythonanywhere.com/contacto</div>
-    </div>
+<body>
 
-    <div class="divider"></div>
-    
-    <div style="line-height: 1.2;">
-        <span class="bold">FOLIO:</span> {{ venta.folio }}<br>
-        <span class="bold">FECHA:</span> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
-        <span class="bold">PAGO:</span> {{ venta.forma_pago }}<br>
-        <span class="bold">ATENDIÓ:</span> {{ venta.vendedor.get_full_name|default:venta.vendedor.username|upper }}
-    </div>
+    <div id="contenedor-ticket-venta" style="background: #ffffff; padding: 2mm; width: 48mm;">
+        <div class="center">
+            <img src="/static/img/estructura/ELZOCO.png" class="logo" alt="Logo El Zoco">
+            <div class="bold" style="font-size: 12px; text-transform: uppercase;">El Zoco Integrated Services</div>
+            <div style="font-size: 8px; line-height: 1.2; margin-top: 2px;">
+                Oscar Marquez Cruz<br>
+                5580867149 | el.zoco.grup@gmail.com<br>
+                https://elzoco.pythonanywhere.com/<br>
+            </div>
+        </div>
 
-    <div class="divider"></div>
+        <div class="divider"></div>
+        
+        <div style="line-height: 1.3;">
+            <span class="bold">FOLIO:</span> {{ venta.folio }}<br>
+            <span class="bold">FECHA:</span> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
+            <span class="bold">PAGO:</span> {{ venta.forma_pago }}<br>
+            <span class="bold">ATENDIÓ:</span> {{ venta.vendedor.get_full_name|default:venta.vendedor.username|upper }}
+        </div>
 
-    <table>
-        <thead>
+        <div class="divider"></div>
+
+        <table>
+            <thead>
+                <tr class="bold">
+                    <td style="width: 15%;">CANT</td>
+                    <td style="width: 55%;">DESC</td>
+                    <td style="width: 30%; text-align: right;">SUBT</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in venta.productos.all %}
+                <tr>
+                    <td>{{ item.cantidad|floatformat:0 }}</td>
+                    <td>{{ item.descripcion|truncatechars:18 }}</td>
+                    <td class="text-right">${{ item.subtotal|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <table style="font-size: 12px;">
             <tr class="bold">
-                <td style="width: 15%;">CANT</td>
-                <td style="width: 55%;">DESC</td>
-                <td style="width: 30%; text-align: right;">SUBT</td>
+                <td style="width: 50%;">TOTAL:</td>
+                <td style="width: 50%; text-align: right;">${{ venta.total|floatformat:0 }}</td>
             </tr>
-        </thead>
-        <tbody>
-            {% for item in venta.productos.all %}
-            <tr>
-                <td>{{ item.cantidad|floatformat:0 }}</td>
-                <td>{{ item.descripcion|truncatechars:18 }}</td>
-                <td class="text-right">${{ item.subtotal|floatformat:0 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        </table>
 
-    <div class="divider"></div>
+        <div class="divider"></div>
 
-    <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
-        <span>TOTAL:</span>
-        <span>${{ venta.total|floatformat:0 }}</span>
+        <div class="center" style="font-size: 8px; margin-top: 8px; line-height: 1.2;">
+            <p class="bold">¡Gracias por tu compra!</p>
+            <p style="font-style: italic;">Conserve su ticket para cualquier aclaración o garantía.</p>
+        </div>
     </div>
 
-    <div class="divider"></div>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const elemento = document.getElementById('contenedor-ticket-venta');
+                
+                html2canvas(elemento, {
+                    backgroundColor: '#ffffff',
+                    scale: 2, // Nitidez para impresoras térmicas
+                    logging: false
+                }).then(canvas => {
+                    const imagenJpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // Reemplazamos la estructura HTML por la imagen limpia
+                    document.body.innerHTML = `
+                        <div style="margin: 0; padding: 0; text-align: center; background: #ffffff; min-height: 100vh;">
+                            <img id="ticket-pos-pure" src="${imagenJpegUrl}" style="width: 48mm; display: block; margin: 0 auto;">
+                        </div>
+                    `;
+                    
+                    // Disparamos la cola de impresión del sistema operativo
+                    setTimeout(() => {
+                        window.print();
+                    }, 300);
 
-    <div class="center" style="font-size: 9px; margin-top: 10px;">
-        <p>*** GRACIAS POR SU COMPRA ***</p>
-        <p>Mantenga su ticket para cualquier aclaración.</p>
-        <p>El Zoco Siempre un Placer Servirle</p>
-    </div>
+                }).catch(error => {
+                    console.error("Error al procesar el JPEG de venta:", error);
+                });
+            }, 350);
+        });
+    </script>
 </body>
 </html>
