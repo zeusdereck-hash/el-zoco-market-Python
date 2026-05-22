@@ -348,7 +348,7 @@
         categoriaActivaModal = slug;
         document.querySelectorAll('.cat-modal-item').forEach(el => {
             if (el.getAttribute('onclick').includes(slug)) {
-                el.style.background = '#7B2CBF'; el.style.color = 'white';
+                el.style.background = '#9c690a'; el.style.color = 'white';
             } else {
                 el.style.background = '#e9ecef'; el.style.color = '#495057';
             }
@@ -381,7 +381,6 @@
                 
                 div.onclick = () => {
                     agregarAlCarrito(idProd, nombreReal, precio);
-                    cerrarModalBusqueda();
                 };
                 
                 div.innerHTML = `

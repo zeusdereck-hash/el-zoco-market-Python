@@ -38,25 +38,7 @@ def generar_ticket(request, id, tipo='venta'):
         venta = get_object_or_404(Venta, id=id)
         return render(request, 'tienda/ticket_pos.html', {'venta': venta})
 
-        items = []
-        for det in obj.productos.all():
-            items.append({
-                'cantidad': int(det.cantidad),
-                'descripcion': det.descripcion,
-                'precio': int(det.precio_unitario),
-                'subtotal': int(det.subtotal)
-            })
-            
-        context = {
-            'venta': obj,  # Enviamos el objeto completo para {{ venta.fecha }}, etc.
-            'tipo_comprobante': "TICKET DE VENTA",
-            'folio': obj.folio,
-            'fecha': obj.fecha,
-            'cliente': obj.cliente,
-            'items': items,
-            'total': int(obj.total),
-            'forma_pago': obj.forma_pago,
-        }
+    
         return render(request, 'tienda/ticket_pos.html', context)
     
     return redirect('admin:index')

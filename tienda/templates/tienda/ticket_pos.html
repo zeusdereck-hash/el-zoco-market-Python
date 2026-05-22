@@ -5,120 +5,119 @@
     <title>Ticket de Venta - El Zoco</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        @page { size: 58mm auto; margin: 0; }
+        @page { size: 80mm auto; margin: 0; }
         body { 
-            width: 48mm; 
-            font-family: 'Courier New', Courier, monospace; 
+            margin: 0; 
+            padding: 0; 
+            background: #f0f0f0; 
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+        /* Contenedor idéntico al render del POS */
+        #ticket-termico-render {
+            width: 290px; 
+            background: #ffffff; 
+            color: #000000; 
+            padding: 14px; 
             font-size: 11px; 
-            margin: 0 auto; 
-            padding: 5px 0;
-            color: #000; 
-            background: #fff;
+            line-height: 1.3; 
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .center { text-align: center; }
-        .bold { font-weight: bold; }
-        .logo { width: 32mm; margin-bottom: 4px; }
-        .divider { border-top: 1px dashed #000; margin: 6px 0; }
-        
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 5px 0; 
-            table-layout: fixed; 
-        }
-        td { vertical-align: top; overflow: hidden; }
-        .text-right { text-align: right; }
     </style>
 </head>
 <body>
 
-    <div id="contenedor-ticket-venta" style="background: #ffffff; padding: 2mm; width: 48mm;">
-        <div class="center">
-            <img src="/static/img/estructura/ELZOCO.png" class="logo" alt="Logo El Zoco">
-            <div class="bold" style="font-size: 12px; text-transform: uppercase;">El Zoco Integrated Services</div>
-            <div style="font-size: 8px; line-height: 1.2; margin-top: 2px;">
-                Oscar Marquez Cruz<br>
-                5580867149 | el.zoco.grup@gmail.com<br>
-                https://elzoco.pythonanywhere.com/<br>
-            </div>
-        </div>
-
-        <div class="divider"></div>
-        
-        <div style="line-height: 1.3;">
-            <span class="bold">FOLIO:</span> {{ venta.folio }}<br>
-            <span class="bold">FECHA:</span> {{ venta.fecha|date:"d/m/Y H:i" }}<br>
-            <span class="bold">PAGO:</span> {{ venta.forma_pago }}<br>
-            <span class="bold">ATENDIÓ:</span> {{ venta.vendedor.get_full_name|default:venta.vendedor.username|upper }}
-        </div>
-
-        <div class="divider"></div>
-
-        <table>
-            <thead>
-                <tr class="bold">
-                    <td style="width: 15%;">CANT</td>
-                    <td style="width: 55%;">DESC</td>
-                    <td style="width: 30%; text-align: right;">SUBT</td>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in venta.productos.all %}
-                <tr>
-                    <td>{{ item.cantidad|floatformat:0 }}</td>
-                    <td>{{ item.descripcion|truncatechars:18 }}</td>
-                    <td class="text-right">${{ item.subtotal|floatformat:0 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="divider"></div>
-
-        <table style="font-size: 12px;">
-            <tr class="bold">
-                <td style="width: 50%;">TOTAL:</td>
-                <td style="width: 50%; text-align: right;">${{ venta.total|floatformat:0 }}</td>
-            </tr>
-        </table>
-
-        <div class="divider"></div>
-
-        <div class="center" style="font-size: 8px; margin-top: 8px; line-height: 1.2;">
-            <p class="bold">¡Gracias por tu compra!</p>
-            <p style="font-style: italic;">Conserve su ticket para cualquier aclaración o garantía.</p>
+<div id="ticket-termico-render">
+    <div style="text-align: center; margin-bottom: 10px;">
+        <img src="/static/img/estructura/ELZOCO.png" alt="Logo" style="width: 250px; height: auto; margin-bottom: 5px;">
+        <div style="font-size: 16px; font-weight: bold; font-family: 'Arial Black', Gadget, sans-serif; text-transform: uppercase;">El zoco intégrate services</div>
+        <div style="font-size: 18px; color: #000000; margin-top: 2px;">
+            Oscar Marquez Cruz<br>
+            5580867149<br>
+            el.zoco.grup@gmail.com<br>
+            <span style="font-size: 15px; text-decoration: underline;">https://elzoco.pythonanywhere.com/</span>
         </div>
     </div>
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const elemento = document.getElementById('contenedor-ticket-venta');
-                
-                html2canvas(elemento, {
-                    backgroundColor: '#ffffff',
-                    scale: 2, // Nitidez para impresoras térmicas
-                    logging: false
-                }).then(canvas => {
-                    const imagenJpegUrl = canvas.toDataURL('image/jpeg', 0.95);
-                    
-                    // Reemplazamos la estructura HTML por la imagen limpia
-                    document.body.innerHTML = `
-                        <div style="margin: 0; padding: 0; text-align: center; background: #ffffff; min-height: 100vh;">
-                            <img id="ticket-pos-pure" src="${imagenJpegUrl}" style="width: 48mm; display: block; margin: 0 auto;">
-                        </div>
-                    `;
-                    
-                    // Disparamos la cola de impresión del sistema operativo
-                    setTimeout(() => {
-                        window.print();
-                    }, 300);
+    <div style="border-top: 1px solid #000; padding-top: 4px; margin-bottom: 6px; font-size: 11px; text-align: left;">
+        <div><strong>Cliente:</strong></div>
+        <div style="border-bottom: 1px solid #888; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;">{{ venta.cliente }}</div>
+        <div><strong>Folio:</strong> <span style="font-weight: bold;">{{ venta.folio }}</span></div>
+        <div><strong>Fecha:</strong> <span>{{ venta.fecha|date:"d/m/Y H:i:s" }}</span></div>
+        <div><strong>Status:</strong> Pagado</div>
+        <div><strong>Forma Pago:</strong> <span style="text-transform: uppercase;">{{ venta.forma_pago }}</span></div>
+        <div><strong>Atendió:</strong> {{ venta.vendedor.get_full_name|default:venta.vendedor.username|upper }}</div>
+    </div>
 
-                }).catch(error => {
-                    console.error("Error al procesar el JPEG de venta:", error);
-                });
-            }, 350);
-        });
-    </script>
+    <div style="border-top: 1px solid #000; padding-top: 4px;">
+        <div style="font-size: 14px; font-weight: bold; display: flex; justify-content: space-between;">
+            <span>Descripción</span>
+        </div>
+        <div style="font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 4px;">
+            <span style="width: 25%; display: inline-block;">Cantidad</span>
+            <span style="width: 20%; display: inline-block; text-align: center;">Precio</span>
+            <span style="width: 30%; display: inline-block; text-align: right;">Subtotal</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            {% for item in venta.productos.all %}
+            <div style="display: flex; flex-direction: column; width: 100%; font-size: 10.5px; color: #000;">
+                <div style="text-transform: uppercase; font-weight: bold; width: 100%; word-wrap: break-word; text-align: left;">
+                    {{ item.descripcion }}
+                </div>
+                <div style="width: 100%; margin-top: 1px; margin-bottom: 3px;">
+                    <span style="width: 25%; display: inline-block; text-align: left;">{{ item.cantidad|floatformat:2 }}</span>
+                    <span style="width: 30%; display: inline-block; text-align: center;">${{ item.precio_unitario|floatformat:2 }}</span>
+                    <span style="width: 30%; display: inline-block; text-align: right; font-weight: bold;">${{ item.subtotal|floatformat:2 }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="border-top: 1px solid #000; margin-top: 8px; padding-top: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; padding: 2px 0;">
+            <span style="width: 50%; text-align: right; padding-right: 20px;">Total</span>
+            <span style="width: 50%; text-align: right;">${{ venta.total|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <div style="border-top: 2px solid #000; margin-top: 10px; padding-top: 12px; text-align: center;">
+        <div style="display: inline-block; padding: 5px; border: 1px solid #000; margin-bottom: 4px;">
+            <div style="width: 65px; height: 65px; background: #000; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: bold;">QR CODE</div>
+        </div>
+        <div style="font-size: 8px; color: #555; margin-bottom: 10px;">Identificador Venta #{{ venta.id }}</div>
+        <div style="font-size: 10px; font-style: italic; font-weight: 500;">Siempre un placer poder servirle</div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const elemento = document.getElementById('ticket-termico-render');
+            html2canvas(elemento, {
+                backgroundColor: '#ffffff',
+                scale: 2, // Nitidez excelente para impresión térmica
+                logging: false
+            }).then(canvas => {
+                const imagenJpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+                
+                // Transmutación completa a imagen pura
+                document.body.innerHTML = `
+                    <div style="margin: 0; padding: 20px 0; text-align: center; background: #f0f0f0; min-height: 100vh;">
+                        <img src="${imagenJpegUrl}" style="width: 290px; display: block; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    </div>
+                `;
+                
+                setTimeout(() => { window.print(); }, 300);
+            }).catch(error => {
+                console.error("Error al procesar el JPEG unificado:", error);
+            });
+        }, 350);
+    });
+</script>
+
 </body>
 </html>
