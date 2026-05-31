@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from django.utils.text import slugify
 from django.db.models import Sum
@@ -19,6 +20,7 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nombre
+
 
 class Producto(models.Model):
     BADGE_CHOICES = [
@@ -54,6 +56,7 @@ class Producto(models.Model):
             self.slug = slugify(self.nombre)
         super().save(*args, **kwargs)
 
+
 class MovimientoCaja(models.Model):
     TIPO_CHOICES = [('INGRESO', 'Ingreso (+)'), ('GASTO', 'Gasto (-)')]
     tipo = models.CharField(max_length=7, choices=TIPO_CHOICES)
@@ -66,13 +69,13 @@ class MovimientoCaja(models.Model):
         verbose_name_plural = "Movimientos de Caja"
         ordering = ['-monto']
 
-# --- SISTEMA DE DEUDAS Y ABONOS ---
 
-class Deuda(models.Model):
-    persona = models.CharField(max_length=200, verbose_name="Proveedor")
+# --- CLASE BASE PARA FINANZAS (Estructura Compartida Abstracta) ---
+
+class BaseCredito(models.Model):
+    persona = models.CharField(max_length=200)
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_inicio = models.DateField(default=timezone.now, verbose_name="Fecha de Inicio")
-    yo_debo = models.BooleanField(default=True, verbose_name="¿Es deuda mía?")
     
     # Slots de programación
     cantidad_pagos = models.PositiveIntegerField(default=1, verbose_name="Cantidad de Plazos")
@@ -85,24 +88,33 @@ class Deuda(models.Model):
         verbose_name="Monto x c/pago"
     )
 
+    class Meta:
+        abstract = True
+
     @property
     def saldo_pendiente(self):
         total_abonado = self.abonos.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
         return self.monto_total - total_abonado
 
-    def __str__(self):
-        return f"{self.persona} (${self.saldo_pendiente})"
-
     def actualizar_cuota(self):
-        """Recalcula el monto por pago basado en el saldo pendiente actual"""
+        """Recalcula el monto por pago basado en el saldo pendiente actual de forma segura"""
         saldo = self.saldo_pendiente
         if self.cantidad_pagos > 0:
             nuevo_monto = saldo / self.cantidad_pagos
-            # Usamos update para evitar disparar señales recursivas
-            Deuda.objects.filter(pk=self.pk).update(monto_por_pago=nuevo_monto)
+            self.__class__.objects.filter(pk=self.pk).update(monto_por_pago=nuevo_monto)
+
+
+# --- SECCIÓN FINANZAS: 1. CUENTAS POR PAGAR (PROVEEDORES) ---
+
+class Deuda(BaseCredito):
+    class Meta:
+        verbose_name = "Cuenta por Pagar)"
+        verbose_name_plural = "Cuentas por Pagar"
+
+    def __str__(self):
+        return f"{self.persona} (${self.saldo_pendiente})"
 
     def save(self, *args, **kwargs):
-        # Al guardar manualmente, calculamos según el saldo o monto total
         if self.pk:
             saldo = self.saldo_pendiente
         else:
@@ -114,7 +126,7 @@ class Deuda(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Generación automática de abonos (solo para deudas nuevas)
+        # Generación automática de plazos programados para Proveedores
         if is_new and self.cantidad_pagos > 1 and self.periodicidad_dias > 0:
             for i in range(self.cantidad_pagos):
                 fecha_pago = self.fecha_inicio + timezone.timedelta(days=i * self.periodicidad_dias)
@@ -125,30 +137,69 @@ class Deuda(models.Model):
                     pagado=False
                 )
 
+
+# --- SECCIÓN FINANZAS: 2. VENTAS A CRÉDITO (CLIENTES) ---
+
+class VentaCredito(BaseCredito):
+    # Vinculación opcional a la venta del POS para auditoría de qué productos se llevaron a crédito
+    venta = models.OneToOneField('Venta', on_delete=models.SET_NULL, null=True, blank=True, related_name='credito_asignado')
+
     class Meta:
-        verbose_name = "Deuda"
-        verbose_name_plural = "Administración De Deudas"
+        verbose_name = "Venta a Crédito"
+        verbose_name_plural = "Ventas a Crédito"
+
+    def __str__(self):
+        return f"Cliente: {self.persona} (${self.saldo_pendiente})"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            saldo = self.saldo_pendiente
+        else:
+            saldo = self.monto_total
+
+        if self.cantidad_pagos > 0:
+            self.monto_por_pago = saldo / self.cantidad_pagos
+        
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # Generación automática de plazos programados para Clientes
+        if is_new and self.cantidad_pagos > 1 and self.periodicidad_dias > 0:
+            for i in range(self.cantidad_pagos):
+                fecha_pago = self.fecha_inicio + timezone.timedelta(days=i * self.periodicidad_dias)
+                Abono.objects.create(
+                    venta_credito=self,
+                    monto=self.monto_por_pago,
+                    fecha=fecha_pago,
+                    pagado=False
+                )
+
+
+# --- TABLA UNIFICADA DE HISTORIAL DE ABONOS ---
 
 class Abono(models.Model):
-    deuda = models.ForeignKey(Deuda, on_delete=models.CASCADE, related_name='abonos')
+    # Un abono pertenece dinámicamente a una Deuda de Proveedor O a una Venta a Crédito de Cliente
+    deuda = models.ForeignKey(Deuda, on_delete=models.CASCADE, related_name='abonos', null=True, blank=True)
+    venta_credito = models.ForeignKey(VentaCredito, on_delete=models.CASCADE, related_name='abonos', null=True, blank=True)
+    
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateTimeField(default=timezone.now, verbose_name="Fecha de Pago/Programada")
     pagado = models.BooleanField(default=True, verbose_name="¿Pagado?")
 
     def __str__(self):
-        return f"Abono de ${self.monto} - {self.deuda.persona}"
+        if self.deuda:
+            return f"Abono de ${self.monto} -> Prov: {self.deuda.persona}"
+        return f"Abono de ${self.monto} <- Cliente: {self.venta_credito.persona}"
 
     class Meta:
         verbose_name = "Abono"
-        verbose_name_plural = "Abonos"
-        ordering = ['fecha']
+        verbose_name_plural = "Historial General de Abonos"
+        ordering = ['fecha', '-id']
 
-import datetime
 
-# 1. Definimos la función con el nombre exacto
+# --- HISTORIAL DE VENTAS (POS) ---
+
 def generar_folio():
-    # Buscamos el último objeto directamente en la base de datos
-    # Nota: Usamos 'tienda.Venta' o simplemente Venta si ya está definida
     from .models import Venta 
     ultimo_ticket = Venta.objects.all().order_by('id').last()
     fecha_hoy = datetime.datetime.now().strftime("%Y%m%d")
@@ -159,12 +210,12 @@ def generar_folio():
     nuevo_id = ultimo_ticket.id + 1
     return f"ZOCO-{fecha_hoy}-{nuevo_id:05d}"
 
+
 class Venta(models.Model):
-    # 2. Aquí estaba el error: decía 'generar_folio_zoco' pero la función se llama 'generar_folio'
     folio = models.CharField(
         max_length=30, 
         unique=True, 
-        default=generar_folio, # Sin paréntesis y con el nombre correcto
+        default=generar_folio,
         verbose_name="Folio Ticket",
         editable=False
     )
@@ -178,6 +229,7 @@ class Venta(models.Model):
         ('MERCADO PAGO', 'Mercado Pago'),
         ('PAYPAL', 'PayPal'),
         ('TARJETA', 'Tarjeta'),
+        ('CREDITO', 'Crédito'), # Nueva opción integrada
     ]
     
     forma_pago = models.CharField(
@@ -196,21 +248,48 @@ class Venta(models.Model):
 
     def __str__(self):
         return f"Ticket {self.folio} - {self.cliente}"
+
+
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, related_name='productos', on_delete=models.CASCADE)
-    producto = models.ForeignKey('Producto', on_delete=models.SET_NULL, null=True) # Relación al producto real
-    descripcion = models.CharField(max_length=255) # Copia del nombre al vender
+    producto = models.ForeignKey('Producto', on_delete=models.SET_NULL, null=True)
+    descripcion = models.CharField(max_length=255)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=0)
     subtotal = models.DecimalField(max_digits=10, decimal_places=0)
 
     def __str__(self):
         return f"{self.cantidad} x {self.descripcion}"
-# --- SEÑALES (Signals) ---
-# Esto automatiza el recálculo al crear o eliminar abonos
+
+
+# --- RECEPTORES DE SEÑALES (Signals) ---
+
+# --- RECEPTORES DE SEÑALES (Signals) ---
 
 @receiver(post_save, sender=Abono)
 @receiver(post_delete, sender=Abono)
-def actualizar_deuda_al_abonar(sender, instance, **kwargs):
-    """Llamamos al método de recálculo de la deuda cada vez que hay cambios en sus abonos"""
-    instance.deuda.actualizar_cuota()
+def actualizar_finanzas_al_abonar(sender, instance, **kwargs):
+    """Dispara de forma inteligente el recálculo en el módulo financiero que corresponda"""
+    if instance.deuda:
+        instance.deuda.actualizar_cuota()
+    if instance.venta_credito:
+        instance.venta_credito.actualizar_cuota()
+
+
+@receiver(post_save, sender=Venta)
+def crear_venta_a_credito_desde_pos(sender, instance, created, **kwargs):
+    """
+    Automatización: Si el POS genera un ticket marcado como 'CREDITO',
+    se abre automáticamente un expediente en Ventas a Crédito (Clientes).
+    """
+    if created and instance.forma_pago == 'CREDITO':
+        # Evitamos duplicados verificando si ya existe un registro para esta venta
+        if not VentaCredito.objects.filter(venta=instance).exists():
+            VentaCredito.objects.create(
+                venta=instance,
+                persona=instance.cliente,       # Toma el nombre del cliente ingresado en el POS
+                monto_total=instance.total,     # El saldo inicial es el total de la venta
+                fecha_inicio=instance.fecha.date(),
+                cantidad_pagos=1,               # Por defecto se establece a un solo plazo (configurable en el admin)
+                periodicidad_dias=0             # Pago único inicial
+            )

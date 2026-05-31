@@ -47,45 +47,53 @@ def generar_ticket(request, id, tipo='venta'):
 def ticket_abono(request, abono_id):
     """
     Maneja la visualización del ticket de abono/estado de cuenta.
-    Inyecta exactamente las variables que el HTML en blanco está buscando.
+    Recibe el ID correcto desde el botón corregido del admin.
     """
     abono_actual = get_object_or_404(Abono, id=abono_id)
     deuda = abono_actual.deuda
-    historial_abonos = Abono.objects.filter(deuda=deuda).order_by('fecha')
     
+    # Historial completo de abonos para esta deuda
+    historial_abonos = Abono.objects.filter(deuda=deuda).order_by('fecha', 'id')
+    
+    # Calcular qué número de pago es este abono en la lista cronológica
     try:
         lista_ids = list(historial_abonos.values_list('id', flat=True))
         numero_pago_actual = lista_ids.index(abono_actual.id) + 1
     except ValueError:
         numero_pago_actual = 1
 
-    total_pagado = historial_abonos.filter(pagado=True).aggregate(total=Sum('monto'))['total'] or 0
+    # Cantidad total de abonos reales en la BD (Esquema: Pago X de Y)
+    total_pagos_dinamico = historial_abonos.count()
 
-    # Mapeo de campo seguro según el modelo Deuda (usa .persona)
+    # Sumamos lo pagado acumulado únicamente hasta este abono inclusive
+    total_pagado = historial_abonos.filter(id__lte=abono_actual.id).aggregate(total=Sum('monto'))['total'] or 0
+
+    # Mapeo seguro del nombre del proveedor/cliente
     proveedor_nombre = "No asignado"
     if deuda:
-        if hasattr(deuda, 'persona'):
+        if hasattr(deuda, 'persona') and deuda.persona:
             proveedor_nombre = deuda.persona
-        elif hasattr(deuda, 'proveedor'):
+        elif hasattr(deuda, 'proveedor') and deuda.proveedor:
             proveedor_nombre = deuda.proveedor
+
+    # Cálculo matemático del saldo restante al corte de este ticket
+    monto_original = deuda.monto_total if deuda else 0
+    saldo_restante_real = monto_original - total_pagado
 
     context = {
         'abono': abono_actual,
         'tipo_comprobante': 'COMPROBANTE DE ABONO',
         
-        # Variables que el HTML espera
         'folio': f"ABO-{abono_actual.id:05d}",
         'fecha': abono_actual.fecha,
         'proveedor': proveedor_nombre, 
         
-        # Datos cuantitativos de la Deuda
-        'monto_total_origin': deuda.monto_total if deuda else 0,
+        'monto_total_origin': monto_original,
         'total_pagado': total_pagado,
-        'saldo_restante': deuda.saldo_pendiente if deuda else 0,
+        'saldo_restante': saldo_restante_real,
         
-        # Datos complementarios de impresión
         'usuario_atendio': request.user.get_full_name() or request.user.username or "SISTEMA",
-        'total_pagos': deuda.cantidad_pagos if deuda else 1,      
+        'total_pagos': total_pagos_dinamico,      
         'periodicidad': deuda.periodicidad_dias if deuda else 0,  
         'numero_pago': numero_pago_actual,        
     }
