@@ -283,13 +283,30 @@ def crear_venta_a_credito_desde_pos(sender, instance, created, **kwargs):
     se abre automáticamente un expediente en Ventas a Crédito (Clientes).
     """
     if created and instance.forma_pago == 'CREDITO':
-        # Evitamos duplicados verificando si ya existe un registro para esta venta
         if not VentaCredito.objects.filter(venta=instance).exists():
             VentaCredito.objects.create(
                 venta=instance,
-                persona=instance.cliente,       # Toma el nombre del cliente ingresado en el POS
-                monto_total=instance.total,     # El saldo inicial es el total de la venta
+                persona=instance.cliente,
+                monto_total=instance.total,
                 fecha_inicio=instance.fecha.date(),
-                cantidad_pagos=1,               # Por defecto se establece a un solo plazo (configurable en el admin)
-                periodicidad_dias=0             # Pago único inicial
+                cantidad_pagos=1,
+                periodicidad_dias=0
+            )
+
+
+@receiver(post_save, sender=Venta)
+def registrar_ingreso_caja_desde_pos(sender, instance, created, **kwargs):
+    """
+    Automatización: Si el POS genera una venta con pago inmediato (Efectivo, Transferencia, MP),
+    registra automáticamente el ingreso en el módulo de Movimientos de Caja.
+    """
+    if created and instance.forma_pago in ['EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO']:
+        descripcion_movimiento = f"Venta POS - Folio #{instance.folio}"
+        
+        if not MovimientoCaja.objects.filter(descripcion=descripcion_movimiento).exists():
+            MovimientoCaja.objects.create(
+                tipo='INGRESO',
+                monto=instance.total,
+                descripcion=descripcion_movimiento,
+                fecha=instance.fecha
             )
