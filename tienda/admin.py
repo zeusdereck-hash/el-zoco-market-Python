@@ -24,11 +24,17 @@ class ElZocoAdminSite(admin.AdminSite):
         from django.db.models import Sum
         from django.utils import timezone
         
+        # Obtenemos la fecha de hoy de forma segura según la zona horaria del sistema
         hoy = timezone.now().date()
         
-        # --- CÁLCULOS DE CAJA ---
+        # --- CÁLCULOS GLOBALES PARA EL BALANCE (FONDO DE CAJA) ---
         ingresos_totales = MovimientoCaja.objects.filter(tipo='INGRESO').aggregate(total=Sum('monto'))['total'] or 0
         egresos_totales = MovimientoCaja.objects.filter(tipo='GASTO').aggregate(total=Sum('monto'))['total'] or 0
+        
+        # --- CÁLCULOS ESPECÍFICOS DEL DÍA (Para las tarjetas verde y roja) ---
+        # Filtramos los movimientos cuya fecha coincida exactamente con el día de hoy
+        ingresos_hoy = MovimientoCaja.objects.filter(tipo='INGRESO', fecha__date=hoy).aggregate(total=Sum('monto'))['total'] or 0
+        egresos_hoy = MovimientoCaja.objects.filter(tipo='GASTO', fecha__date=hoy).aggregate(total=Sum('monto'))['total'] or 0
         
         # --- CÁLCULOS DE DEUDAS (PROVEEDORES) ---
         deudas_qs = Deuda.objects.all()
@@ -38,13 +44,11 @@ class ElZocoAdminSite(admin.AdminSite):
 
         # --- CÁLCULOS DE VENTAS A CRÉDITO (CLIENTES) ---
         creditos_clientes_qs = VentaCredito.objects.all()
-        
-        # 1. Totales Financieros Coincidentes
         total_credito_original_clientes = creditos_clientes_qs.aggregate(total=Sum('monto_total'))['total'] or 0
         total_por_cobrar_clientes = sum(c.saldo_pendiente for c in creditos_clientes_qs)
         total_cobrado_clientes = Abono.objects.filter(venta_credito__isnull=False, pagado=True).aggregate(total=Sum('monto'))['total'] or 0
 
-        # 2. Conteo de Clientes Activos y Vencidos
+        # Conteo de Clientes
         clientes_pendiente_conteo = 0
         clientes_vencidos_conteo = 0
 
@@ -52,28 +56,33 @@ class ElZocoAdminSite(admin.AdminSite):
             saldo = credito.saldo_pendiente
             if saldo > 0:
                 clientes_pendiente_conteo += 1
-                
-                # Verificamos si tiene plazos programados sin pagar cuya fecha ya expiró
                 tiene_plazos_vencidos = credito.abonos.filter(
                     pagado=False,
-                    fecha__lt=timezone.now() # La fecha programada es menor a hoy
+                    fecha__lt=timezone.now()
                 ).exists()
-                
                 if tiene_plazos_vencidos:
                     clientes_vencidos_conteo += 1
 
         extra_context = extra_context or {}
         extra_context.update({
+            # Balance general (Fondo de caja actual)
             'balance': ingresos_totales - egresos_totales,
             'ingresos_totales': ingresos_totales,
             'egresos_totales': egresos_totales,
             
-            # Datos de Proveedores
+            # --- NUEVAS VARIABLES PARA TUS TARJETAS DEL DÍA ---
+            # Las enviamos con múltiples nombres comunes por si tu HTML usa "hoy" o "dia"
+            'ingresos_hoy': ingresos_hoy,
+            'egresos_hoy': egresos_hoy,
+            'ingresos_dia': ingresos_hoy,
+            'egresos_dia': egresos_hoy,
+            
+            # Proveedores
             'pendiente_proveedores': pendiente_proveedores,
             'total_deuda_original': total_deuda_original,
             'total_pagado_deudas': total_pagado_deudas,
             
-            # Nuevos Datos de Clientes para el HTML
+            # Clientes
             'total_por_cobrar_clientes': total_por_cobrar_clientes,
             'total_credito_original_clientes': total_credito_original_clientes,
             'total_cobrado_clientes': total_cobrado_clientes,
