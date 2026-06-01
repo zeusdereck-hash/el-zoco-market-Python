@@ -108,77 +108,83 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Alerta de Deudas -->
-        <div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card shadow-sm" style="border-left: 5px solid #f39c12;">
-            <div class="card-header bg-white">
-                <h3 class="card-title text-dark font-weight-bold">
-                    <i class="fas fa-hand-holding-usd mr-2"></i> Resumen de Cuentas por Pagar
-                </h3>
-            </div>
-            <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 border-right">
-                            <small class="text-muted">DEUDA TOTAL INICIAL</small>
-                            <h4 class="font-weight-bold">${{ total_deuda_original|floatformat:0|intcomma}}</h4>
-                    </div>
-                    <div class="col-md-4 border-right">
-                        <small class="text-muted text-success">TOTAL ABONADO</small>
-                        <h4 class="font-weight-bold text-success">${{ total_pagado_deudas|floatformat:0|intcomma}}</h4>
-                    </div>
-                    <div class="col-md-4">
-                        <small class="text-muted text-danger">SALDO PENDIENTE</small>
-                        <h4 class="font-weight-bold text-danger">${{ pendiente_proveedores|floatformat:0|intcomma }}</h4>
+    <!-- Bloque 4: Cuentas por Pagar y Cuentas por Cobrar Homologadas -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            
+            <!-- CORRECCIÓN 1: RESUMEN DE CUENTAS POR PAGAR (PROVEEDORES) -->
+            <div class="card shadow-sm mb-4" style="border-left: 5px solid #f39c12; border-radius: 4px; overflow: hidden; border-top: none; border-right: none; border-bottom: none;">
+                <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-dark font-weight-bold mb-0" style="font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="fas fa-hand-holding-usd mr-2 text-warning"></i> Resumen de Cuentas por Pagar
+                    </h3>
+                </div>
+                <div class="card-body text-white p-0" style="background-color: #2c2c2c;">
+                    <div class="row no-gutters text-center py-4">
+                        <div class="col-md-4" style="border-right: 1px solid #444;">
+                            <small class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Deuda Total Inicial</small>
+                            <h4 class="font-weight-bold mb-0" style="font-size: 1.6rem; color: #ffffff;">${{ total_deuda_original|floatformat:0|intcomma}}</h4>
+                        </div>
+                        <div class="col-md-4" style="border-right: 1px solid #444;">
+                            <small class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Abonado</small>
+                            <h4 class="font-weight-bold text-success mb-0" style="font-size: 1.6rem;">${{ total_pagado_deudas|floatformat:0|intcomma}}</h4>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Saldo Pendiente</small>
+                            <h4 class="font-weight-bold text-danger mb-0" style="font-size: 1.6rem;">${{ pendiente_proveedores|floatformat:0|intcomma }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-<!-- RESUMEN DE VENTAS A CRÉDITO (CUENTAS POR COBRAR) -->
-<div class="card card-dark" style="border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; overflow: hidden; border: 1px solid #343a40;">
-    <div class="card-header bg-white py-3" style="border-left: 4px solid #28a745;">
-        <h5 class="card-title mb-0 text-dark font-weight-bold" style="font-size: 1.1rem; display: flex; align-items: center;">
-            <i class="fas fa-hand-holding-usd mr-2 text-success"></i> Resumen de Ventas a Crédito (Clientes)
-        </h5>
-    </div>
-    <div class="card-body text-white p-0" style="background-color: #2c2c2c;">
-        <div class="row no-gutters text-center py-4">
-            
-            <!-- Bloque 1: Crédito Original -->
-            <div class="col-6 col-md-2" style="border-right: 1px solid #444;">
-                <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Crédito Otorgado</span>
-                <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #ffffff;">${{ total_credito_original_clientes|floatformat:"0" }}</span>
-            </div>
-            
-            <!-- Bloque 2: Total Cobrado -->
-            <div class="col-6 col-md-2" style="border-right: 1px solid #444;">
-                <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Cobrado</span>
-                <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #28a745;">${{ total_cobrado_clientes|floatformat:"0" }}</span>
-            </div>
-            
-            <!-- Bloque 3: Saldo Pendiente por Cobrar -->
-            <div class="col-6 col-md-3" style="border-right: 1px solid #444;">
-                <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Saldo Pendiente Total</span>
-                <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #fd7e14;">${{ total_por_cobrar_clientes|floatformat:"0" }}</span>
-            </div>
 
-            <!-- Bloque 4: Clientes con Saldo Activo -->
-            <div class="col-6 col-md-2" style="border-right: 1px solid #444; background-color: #343a40;">
-                <span class="text-uppercase text-muted font-weight-bold d-block mb-2 pt-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Clientes Activos</span>
-                <span class="font-weight-bold d-block text-info" style="font-size: 1.5rem;">
-                    <i class="fas fa-users" style="font-size: 1.1rem; opacity: 0.7;"></i> {{ clientes_pendiente_conteo }}
-                </span>
-            </div>
+            <!-- CORRECCIÓN 2: RESUMEN DE VENTAS A CRÉDITO (CUENTAS POR COBRAR) -->
+            <div class="card shadow-sm mb-4" style="border-left: 5px solid #28a745; border-radius: 4px; overflow: hidden; border-top: none; border-right: none; border-bottom: none;">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 text-dark font-weight-bold" style="font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="fas fa-hand-holding-usd mr-2 text-success"></i> Resumen de Ventas a Crédito
+                    </h5>
+                </div>
+                <div class="card-body text-white p-0" style="background-color: #2c2c2c;">
+                    <div class="row no-gutters align-items-stretch text-center">
+                        
+                        <!-- Bloque 1: Crédito Original -->
+                        <div class="col-6 col-md-2 py-4" style="border-right: 1px solid #444; display: flex; flex-column; justify-content: center; flex-direction: column;">
+                            <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Otorgado</span>
+                            <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #ffffff;">${{ total_credito_original_clientes|floatformat:"0"|intcomma }}</span>
+                        </div>
+                        
+                        <!-- Bloque 2: Total Cobrado -->
+                        <div class="col-6 col-md-2 py-4" style="border-right: 1px solid #444; display: flex; flex-column; justify-content: center; flex-direction: column;">
+                            <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Cobrado</span>
+                            <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #28a745;">${{ total_cobrado_clientes|floatformat:"0"|intcomma }}</span>
+                        </div>
+                        
+                        <!-- Bloque 3: Saldo Pendiente por Cobrar -->
+                        <div class="col-6 col-md-3 py-4" style="border-right: 1px solid #444; display: flex; flex-column; justify-content: center; flex-direction: column;">
+                            <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Saldo Pendiente Total</span>
+                            <span class="font-weight-bold d-block" style="font-size: 1.6rem; color: #b80606;">${{ total_por_cobrar_clientes|floatformat:"0"|intcomma }}</span>
+                        </div>
 
-            <!-- Bloque 5: Clientes con Cuenta Vencida -->
-            <div class="col-12 col-md-3" style="background-color: #3d2424;">
-                <span class="text-uppercase text-danger font-weight-bold d-block mb-2 pt-1" style="font-size: 0.7rem; letter-spacing: 0.5px; color: #ff6b6b !important;">Clientes Vencidos</span>
-                <span class="font-weight-bold d-block" style="font-size: 1.5rem; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 1.1rem; opacity: 0.8;"></i> {{ clientes_vencidos_conteo }}
-                </span>
+                        <!-- Bloque 4: Clientes con Saldo Activo (Gris Intenso Sincronizado) -->
+                        <div class="col-6 col-md-2 py-4" style="border-right: 1px solid #444; background-color: #343a40; display: flex; flex-column; justify-content: center; flex-direction: column;">
+                            <span class="text-uppercase text-muted font-weight-bold d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Clientes Activos</span>
+                            <span class="font-weight-bold d-block text-info" style="font-size: 1.5rem;">
+                                <i class="fas fa-users" style="font-size: 1.1rem; opacity: 0.7;"></i> {{ clientes_pendiente_conteo }}
+                            </span>
+                        </div>
+
+                        <!-- Bloque 5: Clientes con Cuenta Vencida (Contenedor de Alto Perfecto) -->
+                        <div class="col-12 col-md-3 py-4" style="background-color: #3d2424; display: flex; flex-column; justify-content: center; flex-direction: column;">
+                            <span class="text-uppercase font-weight-bold d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px; color: #ff6b6b !important;">Clientes Vencidos</span>
+                            <span class="font-weight-bold d-block" style="font-size: 1.5rem; color: #dc3545;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 1.1rem; opacity: 0.8;"></i> {{ clientes_vencidos_conteo }}
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
         </div>

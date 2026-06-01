@@ -128,10 +128,10 @@ JAZZMIN_SETTINGS = {
 
     # --- NUEVA SECCIÓN: LINKS PERSONALIZADOS ---
     "custom_links": {
-        "tienda": [ # Esto hace que aparezca dentro de la sección "Tienda"
+        "tienda": [ 
             {
-                "name": "Punto de Venta (POS)", 
-                "url": "pos", # El nombre de la URL en tu urls.py
+                "name": "Punto de Venta", 
+                "url": "pos", 
                 "icon": "fas fa-cash-register",
                 "permissions": ["tienda.view_venta"]
             },
@@ -142,15 +142,17 @@ JAZZMIN_SETTINGS = {
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
         "tienda.Producto": "fas fa-box-open",
         "tienda.Categoria": "fas fa-tags",
-        "tienda.Venta": "fas fa-ticket-alt",  # Icono para Historial de Tickets
+        "tienda.Venta": "fas fa-ticket-alt",  
         "finanzas.Deuda": "fas fa-hand-holding-usd",
         "finanzas.MovimientoCaja": "fas fa-wallet",
+        "finanzas.VentaCredito": "fas fa-file-invoice-dollar",
     },
 
     # Orden de las secciones
-    "order_with_respect_to": ["tienda", "auth"],
+    "order_with_respect_to": ["auth","tienda","finanzas"],
 }
 
 # --- Personalización de Colores y Modo Oscuro (UI Customizer) ---
@@ -167,7 +169,7 @@ JAZZMIN_UI_TWEAKS = {
     "layout_boxed": False,
     "footer_fixed": False,
     "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-primary", # Sidebar oscuro
+    "sidebar": "sidebar-dark-primary", 
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": False,

@@ -108,7 +108,7 @@ class BaseCredito(models.Model):
 
 class Deuda(BaseCredito):
     class Meta:
-        verbose_name = "Cuenta por Pagar)"
+        verbose_name = "Cuenta por Pagar"
         verbose_name_plural = "Cuentas por Pagar"
 
     def __str__(self):
@@ -244,7 +244,7 @@ class Venta(models.Model):
 
     class Meta:
         verbose_name = "Ticket de Venta"
-        verbose_name_plural = "Historial de Tickets (Cajas)"
+        verbose_name_plural = "Historial ventas"
 
     def __str__(self):
         return f"Ticket {self.folio} - {self.cliente}"
@@ -261,15 +261,12 @@ class DetalleVenta(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.descripcion}"
 
-
-# --- RECEPTORES DE SEÑALES (Signals) ---
-
 # --- RECEPTORES DE SEÑALES (Signals) ---
 
 @receiver(post_save, sender=Abono)
 @receiver(post_delete, sender=Abono)
 def actualizar_finanzas_al_abonar(sender, instance, **kwargs):
-    """Dispara de forma inteligente el recálculo en el módulo financiero que corresponda"""
+   
     if instance.deuda:
         instance.deuda.actualizar_cuota()
     if instance.venta_credito:
@@ -278,10 +275,7 @@ def actualizar_finanzas_al_abonar(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Venta)
 def crear_venta_a_credito_desde_pos(sender, instance, created, **kwargs):
-    """
-    Automatización: Si el POS genera un ticket marcado como 'CREDITO',
-    se abre automáticamente un expediente en Ventas a Crédito (Clientes).
-    """
+   
     if created and instance.forma_pago == 'CREDITO':
         if not VentaCredito.objects.filter(venta=instance).exists():
             VentaCredito.objects.create(
@@ -296,10 +290,7 @@ def crear_venta_a_credito_desde_pos(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Venta)
 def registrar_ingreso_caja_desde_pos(sender, instance, created, **kwargs):
-    """
-    Automatización: Si el POS genera una venta con pago inmediato (Efectivo, Transferencia, MP),
-    registra automáticamente el ingreso en el módulo de Movimientos de Caja.
-    """
+    
     if created and instance.forma_pago in ['EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO']:
         descripcion_movimiento = f"Venta POS - Folio #{instance.folio}"
         
