@@ -78,6 +78,30 @@
 
         <div class="divider"></div>
 
+        <div class="bold center" style="font-size: 10px; text-transform: uppercase; margin-bottom: 3px;">HISTORIAL DE PAGOS</div>
+        <table style="font-size: 10px; border-bottom: 1px dashed #000; padding-bottom: 4px; margin-bottom: 6px;">
+            <thead>
+                <tr class="bold" style="border-bottom: 1px solid #000;">
+                    <td style="width: 45%;">Fecha</td>
+                    <td style="width: 25%;">Modo</td>
+                    <td style="width: 30%; text-align: right;">Monto</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in historial_pagos %}
+                <tr>
+                    <td>{{ p.fecha|date:"d/m/y" }}</td>
+                    <td style="text-transform: uppercase;">{{ p.forma_pago|slice:":4" }}</td>
+                    <td class="text-right">${{ p.monto|floatformat:0 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="center" style="font-style: italic;">Primer pago realizado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <table>
             <tbody>
                 <tr>

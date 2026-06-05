@@ -33,12 +33,19 @@ def pos_view(request):
 # --- LÓGICA DE TICKETS Y COMPROBANTES (Formato Unificado) ---
 
 def generar_ticket(request, id, tipo='venta'):
-    
     if tipo == 'venta':
         venta = get_object_or_404(Venta, id=id)
-        return render(request, 'tienda/ticket_pos.html', {'venta': venta})
-
-    
+        
+        historial_pagos = []
+        # Buscamos de forma directa si esta venta generó un registro en Ventas a Crédito
+        if hasattr(venta, 'credito_asignado') and venta.credito_asignado:
+            # Si existe el crédito, extraemos todos sus abonos reales ordenados cronológicamente
+            historial_pagos = Abono.objects.filter(venta_credito=venta.credito_asignado).order_by('fecha', 'id')
+        
+        context = {
+            'venta': venta,
+            'historial_pagos': historial_pagos
+        }
         return render(request, 'tienda/ticket_pos.html', context)
     
     return redirect('admin:index')
@@ -96,6 +103,9 @@ def ticket_abono(request, abono_id):
         'total_pagos': total_pagos_dinamico,      
         'periodicidad': deuda.periodicidad_dias if deuda else 0,  
         'numero_pago': numero_pago_actual,        
+        
+        # CORRECCIÓN: Cambiado de 'historial_abonos' a 'historial_pagos' para que haga match exacto con el HTML
+        'historial_pagos': historial_abonos, 
     }
     return render(request, 'tienda/ticket_abono.html', context)
 
