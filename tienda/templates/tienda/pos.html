@@ -61,6 +61,17 @@
         border-radius: 5px; font-size: 12px; cursor: pointer; transition: 0.2s;
     }
     .metodo-pago-btn.active { background: #FFC000; color: black; font-weight: bold; }
+
+    /* ANIMACIÓN DE SELECCIÓN EN MODAL (CORREGIDA Y FLUIDA) */
+    @keyframes destelloModal {
+        0% { background-color: rgba(40, 167, 69, 0.7); transform: scale(0.97); }
+        50% { background-color: rgba(40, 167, 69, 0.3); }
+        100% { background-color: #ffffff; transform: scale(1); }
+    }
+
+    .producto-seleccionado-modal {
+        animation: destelloModal 0.35s ease-out !important;
+    }
 </style>
 
 <div id="grid-productos" style="display:none;">
@@ -85,7 +96,7 @@
             <small style="color: #888;">Folio: <span id="folio-display" style="color: #FFC000; font-weight: bold;">{{ folio }}</span></small>
             
             <div style="margin-top: 15px;">
-                <button onclick="abrirModalBusqueda()" style="width: 100%; background: #c5a207d2; border: none; color: white; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;">
+                <button onclick="abrirModalBusqueda()" style="width: 100%; background: #ffae00d2; border: none; color: white; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;">
                     🔍 PRODUCTOS
                 </button>
             </div>
@@ -306,6 +317,17 @@
         filtrarProductosModal();
     }
 
+    // FUNCIÓN INTERMEDIA: Maneja la animación del destello y el clic físico antes de insertar
+    function seleccionarProductoDesdeModal(elementoHtml, id, nombre, precio) {
+        elementoHtml.classList.add('producto-seleccionado-modal');
+
+        setTimeout(() => {
+            elementoHtml.classList.remove('producto-seleccionado-modal');
+            agregarAlCarrito(id, nombre, precio);
+        }, 220); // Tiempo óptimo para captar el pulso verde sin alentar el flujo de cobro
+    }
+
+    // BLOQUE CORREGIDO: Inyecta la acción animada dinámicamente al catálogo
     function filtrarProductosModal() {
         const contenedor = document.getElementById('lista-productos-modal');
         if (!contenedor) return;
@@ -327,10 +349,11 @@
 
             if (coincideFiltro && coincideCat) {
                 const div = document.createElement('div');
-                div.style = "background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;";
+                div.style = "background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: background-color 0.2s, transform 0.1s;";
                 
-                div.onclick = () => {
-                    agregarAlCarrito(idProd, nombreReal, precio);
+                // Mapeo del clic hacia la función con interceptor visual
+                div.onclick = function() {
+                    seleccionarProductoDesdeModal(this, idProd, nombreReal, precio);
                 };
                 
                 div.innerHTML = `
@@ -382,80 +405,72 @@
     }
 
     async function enviarVentaFinal() {
-    cerrarModalCobro();
-    const btn = document.getElementById('btn-cobrar');
-    btn.disabled = true;
-    btn.innerText = "PROCESANDO...";
+        cerrarModalCobro();
+        const btn = document.getElementById('btn-cobrar');
+        btn.disabled = true;
+        btn.innerText = "PROCESANDO...";
 
-    let cliente = document.getElementById('modal-cliente').value.trim() || "Venta Mostrador";
-    let descuento = parseFloat(document.getElementById('modal-descuento').value) || 0;
-    let notas = document.getElementById('modal-notas').value.trim();
-    let fechaOpcional = document.getElementById('modal-fecha').value;
+        let cliente = document.getElementById('modal-cliente').value.trim() || "Venta Mostrador";
+        let descuento = parseFloat(document.getElementById('modal-descuento').value) || 0;
+        let notas = document.getElementById('modal-notas').value.trim();
+        let fechaOpcional = document.getElementById('modal-fecha').value;
 
-    try {
-        const response = await fetch('/procesar-pago/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ 
-                carrito: carrito, 
-                total: (total - descuento < 0 ? 0 : total - descuento), 
-                forma_pago: metodoPago, 
-                cliente: cliente,
-                descuento: descuento,
-                notas: notas,
-                fecha_personalizada: fechaOpcional
-            })
-        });
-        const res = await response.json();
-        
-        if (res.status === 'ok') {
-            const totalFinal = total - descuento;
+        try {
+            const response = await fetch('/procesar-pago/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ 
+                    carrito: carrito, 
+                    total: (total - descuento < 0 ? 0 : total - descuento), 
+                    forma_pago: metodoPago, 
+                    cliente: cliente,
+                    descuento: descuento,
+                    notas: notas,
+                    fecha_personalizada: fechaOpcional
+                })
+            });
+            const res = await response.json();
             
-            // 1. Mostrar el modal de éxito con el total de la venta
-            document.getElementById('exito-total-txt').innerText = "$" + totalFinal.toFixed(0);
-            document.getElementById('modal-exito-venta').style.display = 'block';
-            
-            // Definición de las URLs basadas en el ID retornado por Django
-            const urlLocalTicket = `/tienda/ticket/venta/${res.venta_id}/`;
-            const urlAbsolutaTicket = window.location.origin + urlLocalTicket;
+            if (res.status === 'ok') {
+                const totalFinal = total - descuento;
+                
+                document.getElementById('exito-total-txt').innerText = "$" + totalFinal.toFixed(0);
+                document.getElementById('modal-exito-venta').style.display = 'block';
+                
+                const urlLocalTicket = `/tienda/ticket/venta/${res.venta_id}/`;
+                const urlAbsolutaTicket = window.location.origin + urlLocalTicket;
 
-            // 2. CONFIGURACIÓN DEL BOTÓN "VER TICKET"
-            // Abre en una pestaña nueva la plantilla unificada real que genera el JPEG
-            document.getElementById('btn-ver-ticket').onclick = () => {
-                window.open(urlLocalTicket, '_blank');
-            };
+                document.getElementById('btn-ver-ticket').onclick = () => {
+                    window.open(urlLocalTicket, '_blank');
+                };
 
-            // 3. CONFIGURACIÓN DEL BOTÓN "COMPARTIR POR WHATSAPP"
-            // Envía la URL que renderiza de manera nativa la previsualización del ticket en JPEG
-            document.getElementById('btn-whatsapp-ticket').onclick = () => {
-                const msg = `¡Hola! Tu ticket digital de compra en *EL ZOCO* por *$${totalFinal.toFixed(0)}* está listo aquí: ${urlAbsolutaTicket}`;
-                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
-            };
+                document.getElementById('btn-whatsapp-ticket').onclick = () => {
+                    const msg = `¡Hola! Tu ticket digital de compra en *EL ZOCO* por *$${totalFinal.toFixed(0)}* está listo aquí: ${urlAbsolutaTicket}`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                };
 
-            // 4. Limpieza del entorno local para la siguiente venta
-            carrito = [];
-            if (typeof actualizarTablaCarrito === 'function') {
-                actualizarTablaCarrito();
+                carrito = [];
+                if (typeof actualizarTablaCarrito === 'function') {
+                    actualizarTablaCarrito();
+                } else {
+                    const tabla = document.getElementById('pos-productos-list');
+                    if (tabla) tabla.innerHTML = '';
+                    total = 0;
+                    let totalLabel = document.getElementById('pos-total-global');
+                    if (totalLabel) totalLabel.innerText = "$0.00";
+                }
+
             } else {
-                // Fallback de seguridad por si tu función de actualizar tiene otra nomenclatura
-                const tabla = document.getElementById('pos-productos-list');
-                if (tabla) tabla.innerHTML = '';
-                total = 0;
-                let totalLabel = document.getElementById('pos-total-global');
-                if (totalLabel) totalLabel.innerText = "$0.00";
+                alert("❌ Error: " + res.message);
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR PAGO";
             }
-
-        } else {
-            alert("❌ Error: " + res.message);
+        } catch (e) {
+            console.error(e);
+            alert("❌ Error de comunicación de red con el servidor.");
             btn.disabled = false;
             btn.innerText = "CONFIRMAR PAGO";
         }
-    } catch (e) {
-        console.error(e);
-        alert("❌ Error de comunicación de red con el servidor.");
-        btn.disabled = false;
-        btn.innerText = "CONFIRMAR PAGO";
     }
-}
 </script>
 {% endblock %}
