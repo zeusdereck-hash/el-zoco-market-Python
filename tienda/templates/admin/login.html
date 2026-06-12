@@ -1,0 +1,143 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificarse | El Zoco Admin</title>
+    <style>
+        /* Diseño de interfaz oscuro absoluto e independiente */
+        body {
+            background-color: #1a1c20 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .login-container {
+            background: #24272c;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            width: 100%;
+            max-width: 360px;
+            border: 1px solid #2f333d;
+            text-align: center;
+        }
+
+        /* Tu logo único circular perfecto */
+        .login-logo-wrapper {
+            margin-bottom: 20px;
+        }
+        .login-logo-wrapper img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 3px solid #3a3f4d;
+        }
+
+        .login-title {
+            color: #ffffff;
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* Estructura del Formulario */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            color: #989fae;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .form-group input[type="text"], 
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: 1px solid #3a3f4d;
+            background-color: #16181b;
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus {
+            border-color: #4c6ef5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.2);
+        }
+
+        /* Botón de envío */
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+            background-color: #4c6ef5;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+        .submit-btn:hover {
+            background-color: #3b5bdb;
+        }
+
+        /* Notificación de error */
+        .errornote {
+            background-color: #fa5252;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    
+    <div class="login-logo-wrapper">
+        <img src="{% static 'img/estructura/ELZOCO.png' %}" alt="El Zoco Logo">
+    </div>
+
+    <div class="login-title">Bienvenido A El Zoco</div>
+
+    {% if form.errors %}
+        <div class="errornote">Usuario o contraseña incorrectos.</div>
+    {% endif %}
+
+    <form action="{{ app_path }}" method="post" id="login-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_username">Nombre de usuario:</label>
+            <input type="text" name="username" id="id_username" autofocus required>
+        </div>
+        <div class="form-group">
+            <label for="id_password">Contraseña:</label>
+            <input type="password" name="password" id="id_password" required>
+            <input type="hidden" name="next" value="{{ next }}">
+        </div>
+        
+        <button type="submit" class="submit-btn">Identificarse</button>
+    </form>
+</div>
+
+</body>
+</html>

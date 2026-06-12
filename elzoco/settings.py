@@ -45,7 +45,8 @@ ROOT_URLCONF = 'elzoco.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 🎯 CORRECCIÓN TOTAL: Le dice a Django que busque en tu carpeta local
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,35 +89,30 @@ USE_THOUSAND_SEPARATOR = True
 THOUSAND_SEPARATOR = ','
 
 
-# Asegúrate de que STATIC_URL sea este
+# Configuración de archivos estáticos
 STATIC_URL = '/static/'
 
-# ESTA ES LA CORRECCIÓN CLAVE:
-# Apuntamos directamente a la carpeta static que se ve en tu captura
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# STATIC_ROOT debe ser una carpeta diferente para que no choque
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# --- CONFIGURACIÓN DE JAZZMIN (MEJORADA) ---
+
+# --- CONFIGURACIÓN DE JAZZMIN (CORREGIDA SIN LOGIN) ---
 JAZZMIN_SETTINGS = {
-    # Títulos y Marcas
+    # Títulos y Marcas generales del Panel Interno
     "site_title": "El Zoco Admin",
     "site_header": "El Zoco",
     "site_brand": "El Zoco",
     "site_logo": "img/estructura/ELZOCO.png",
-    "login_logo": None,
-    "login_logo_dark": None,
     "site_logo_classes": "img-circle",
     "custom_css": "css/custom_admin.css",
     
-    # Personalización del Login
-    "welcome_sign": "Bienvenido A El Zoco",
+    # 🎯 CONTROL DE LOGIN ELIMINADO PARA CEDERLO A TU TEMPLATE PROPIO
     "copyright": "El Zoco Market Ltd",
     "user_avatar": None,
 
@@ -126,7 +122,7 @@ JAZZMIN_SETTINGS = {
     "show_ui_builder": False,      
     "related_modal_active": True,  
 
-    # --- NUEVA SECCIÓN: LINKS PERSONALIZADOS ---
+    # Links personalizados del menú lateral
     "custom_links": {
         "tienda": [ 
             {
@@ -151,9 +147,10 @@ JAZZMIN_SETTINGS = {
         "finanzas.VentaCredito": "fas fa-file-invoice-dollar",
     },
 
-    # Orden de las secciones
-    "order_with_respect_to": ["auth","tienda","finanzas"],
+    # Orden de las secciones en el menú
+    "order_with_respect_to": ["auth", "tienda", "finanzas"],
 }
+
 
 # --- Personalización de Colores y Modo Oscuro (UI Customizer) ---
 JAZZMIN_UI_TWEAKS = {
@@ -190,3 +187,5 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
+
+LOGIN_REDIRECT_URL = '/admin/'

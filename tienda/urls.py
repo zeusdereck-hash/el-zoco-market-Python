@@ -1,7 +1,9 @@
 from django.urls import path
 from . import views
+from tienda.admin import admin_site
 
 urlpatterns = [
+    path('admin/', admin_site.urls),
     path('', views.index, name='index'),
     path('contacto/', views.contacto, name='contacto'),
     path('tienda/ticket/abono/<int:abono_id>/', views.ticket_abono, name='ticket_abono'),

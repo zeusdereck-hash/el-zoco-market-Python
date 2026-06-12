@@ -1,27 +1,75 @@
-/* 1. Forzamos a que solo se muestre LA PRIMERA imagen que encuentre en el login */
-.login-logo a img:nth-child(n+2) {
-    display: none !important;
+/* ==========================================
+   💥 TIRO DE GRACIA DEFINITIVO PARA EL LOGIN 💥
+   ========================================== */
+
+/* 1. Pulverizar por completo el fondo gigante estirado del logo antiguo */
+.login-page, .login-box-msg {
+    background-image: none !important;
+    background-color: #1a1c20 !important; /* Fondo oscuro premium fijo */
 }
 
-/* 2. Si Jazzmin está creando dos etiquetas <a> distintas, ocultamos la segunda */
-.login-logo a:nth-child(n+2) {
-    display: none !important;
+/* 2. Controlar los logos de Jazzmin para que no se dupliquen ni se deformen */
+.login-logo {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 20px auto 10px auto !important;
 }
 
-/* 3. Por si acaso está usando el texto del site_brand junto al logo */
-.login-logo .brand-text, 
-.login-logo i, 
-.login-logo span:not(.brand-image) {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-}
-
-/* 4. Aseguramos que el que queda sea el rey de la pantalla */
+/* Forzar a que la imagen del logo sea un círculo perfecto mediano */
 .login-logo img {
-    max-width: 140px !important;
-    width: 140px !important;
-    height: auto !important;
-    margin: 0 auto !important;
-    display: block !important;
+    width: 130px !important;
+    height: 130px !important;
+    max-width: 130px !important;
+    max-height: 130px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 3px solid #3a3f4d !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+}
+
+/* Ocultar cualquier segundo logo duplicado o texto fantasma que meta Jazzmin */
+.login-logo a + a, 
+.login-brand-text,
+.brand-text {
+    display: none !important;
+}
+
+/* 3. Estilizar la tarjeta del formulario para que combine */
+.login-box {
+    margin-top: 5% !important;
+}
+
+.login-card-body, .card {
+    background-color: #24272c !important;
+    border: 1px solid #2f333d !important;
+    border-radius: 12px !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5) !important;
+}
+
+/* Ajustar colores de inputs y textos */
+.login-card-body .form-control {
+    background-color: #16181b !important;
+    border: 1px solid #3a3f4d !important;
+    color: #ffffff !important;
+}
+
+.login-card-body .form-control:focus {
+    border-color: #4c6ef5 !important;
+}
+
+.login-box-msg, .login-card-body label {
+    color: #989fae !important;
+}
+
+/* Botón de inicio de sesión */
+.btn-primary {
+    background-color: #4c6ef5 !important;
+    border-color: #4c6ef5 !important;
+    font-weight: 600 !important;
+}
+
+.btn-primary:hover {
+    background-color: #3b5bdb !important;
+    border-color: #3b5bdb !important;
 }
